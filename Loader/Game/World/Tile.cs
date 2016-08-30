@@ -84,8 +84,7 @@ namespace RPGEngine
 			this.offset.x = (int)(TargetRect.x - this.camera.X + (screensize.X / 2));
 			this.offset.y = (int)(TargetRect.y - this.camera.Y + (screensize.Y / 2));
 
-			if (this.type == 2)
-				SDL_RenderCopy(renderer, this.image, ref SourceRect, ref offset);
+			SDL_RenderCopy(renderer, this.image, ref SourceRect, ref offset);
 
 			collisionRect.X = collision_overlay.x = this.offset.x;
 			collisionRect.Y = collision_overlay.y = this.offset.y;

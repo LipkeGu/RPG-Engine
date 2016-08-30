@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using static SDL2.SDL;
 
 namespace RPGEngine
@@ -62,7 +63,7 @@ namespace RPGEngine
 
 		public void Render(IntPtr renderer)
 		{
-			this.Engine.Graphics.Begin();
+			this.Engine.Graphics.Begin(Color.Black);
 
 			this.Interface.Render(Engine.Graphics.WindowSurface);
 			this.World.Render(this.WindowSize(), Engine.Graphics.WindowSurface);

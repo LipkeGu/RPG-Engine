@@ -34,25 +34,6 @@ namespace RPGEngine
 		public event VideoInitStateEventHandler VideoInitState;
 		public event VideoInitErrorEventHandler VideoInitError;
 
-		/// <summary>
-		/// DrawColor (Can be used by SDL_SetRenderDrawColor)
-		/// </summary>
-		public class DrawColor
-		{
-			public byte R { get; set; }
-			public byte G { get; set; }
-			public byte B { get; set; }
-			public byte A { get; set; }
-
-			public DrawColor()
-			{
-				R = G = B = byte.MinValue;
-				A = byte.MaxValue;
-			}
-		}
-
-		public DrawColor DrawColors = new DrawColor();
-
 		#region private Fields
 		IntPtr window, renderer;
 		RenderType renderType;
@@ -128,10 +109,7 @@ namespace RPGEngine
 					OnVideoInitError(GetType().ToString(), "SDL_CreateRenderer():" + SDL_GetError());
 				else
 				{
-					errnum = SDL_SetRenderDrawColor(this.renderer, this.DrawColors.R, this.DrawColors.G, this.DrawColors.B, this.DrawColors.A);
-					if (errnum == -1)
-						OnVideoInitError(GetType().ToString(), "SetRenderDrawColor(): " + SDL_GetError());
-
+					errnum = 0;
 					OnVideoInitState(GetType().ToString(), "Renderer created!");
 
 					if (errnum == 0)
@@ -228,16 +206,24 @@ namespace RPGEngine
 		}
 
 		/// <summary>
-		///	Reports the Video subsystem to "begin" the rendering... 
+		/// Reports the Video subsystem to "begin" the rendering..
 		/// </summary>
-		/// <param name="RenderMode">SDL, OpenGL</param>
-		/// <returns></returns>
-		public void Begin()
+		/// <param name="color">Draw color</param>
+		public void Begin(Color color)
 		{
-			SDL_SetRenderDrawColor(this.renderer, this.DrawColors.R, this.DrawColors.G, this.DrawColors.B, this.DrawColors.A);
+			SDL_SetRenderDrawColor(this.renderer, color.R, color.G, color.B, color.A);
 			SDL_RenderClear(this.renderer);
 		}
 		
+		/// <summary>
+		/// Draws an Rectangle (SDL_Rect) on the screen (Window)
+		/// </summary>
+		/// <param name="renderer"></param>
+		/// <param name="x">position X</param>
+		/// <param name="y">position Y</param>
+		/// <param name="w">Width</param>
+		/// <param name="h">Height</param>
+		/// <param name="color">Color</param>
 		public static void DrawRect(IntPtr renderer, int x, int y, int w, int h, Color color)
 		{
 			var rect = new SDL_Rect();
@@ -249,7 +235,7 @@ namespace RPGEngine
 
 			SDL_SetRenderDrawColor(renderer, color.R, color.G, color.B, color.A);
 			SDL_RenderDrawRect(renderer, ref rect);
-			SDL_SetRenderDrawColor(renderer, byte.MinValue, 0, 0, byte.MaxValue);
+			SDL_SetRenderDrawColor(renderer, byte.MinValue, byte.MinValue, byte.MinValue, byte.MaxValue);
 		}
 	}
 }
