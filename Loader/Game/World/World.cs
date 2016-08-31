@@ -12,33 +12,24 @@ namespace RPGEngine
 
 		Vector2<int> ScreenBsize;
 		Dictionary<string, Map> Maps;
-		Dictionary<string, Player> Players;
 
-		IntPtr renderer;
+		Worldtype worldtype;
 
-		Worldtype type;
-
-		public Worldtype Type
+		public Worldtype WorldType
 		{
-			get { return this.type; }
-			set { this.type = value; }
+			get { return this.worldtype; }
+			set { this.worldtype = value; }
 		}
 
 		public World(string Playername, string MapDirectory, string actorsDirectory, IntPtr renderer,
-			Vector2<int> screenSize, Worldtype type = Worldtype.Normal)
+			Vector2<int> screenSize, Worldtype worldtype = Worldtype.Normal)
 		{
 			this.ScreenBsize = screenSize;
-			this.type = type;
-
-
-			this.renderer = renderer;
-
+			this.worldtype = worldtype;
 			this.Maps = new Dictionary<string, Map>();
-			this.Players = new Dictionary<string, Player>();
 
-			this.ReadMaps(MapDirectory);
-
-
+			this.ReadMaps(MapDirectory, renderer);
+			
 			if (this.Maps.Count > 0)
 			{
 				this.Map = this.Maps["TestMap"];
@@ -47,75 +38,78 @@ namespace RPGEngine
 				this.Map.Load();
 			}
 			
-			this.ReadActors(Playername, actorsDirectory);
+			this.ReadActors(Playername, actorsDirectory, renderer);
 		}
 
-		public void ReadActors(string Playername, string path)
+		public void ReadActors(string Playername, string path, IntPtr renderer)
 		{
 			var actorsDir = new DirectoryInfo(path);
+			var players = new Dictionary<string, Player>();
 
 			foreach (var fil in actorsDir.GetFiles("{0}.ini".F(Playername), SearchOption.AllDirectories))
 				if (fil.Length > 0 && fil.Exists)
 				{
-					this.Players.Add(Playername, new Player(Playername, this.renderer, "Data/Actors/{0}".F(fil.Name), this.camera, this.Map.StartPosition));
-					this.Player = this.Players[Playername];
+					players.Add(Playername, new Player(renderer, "Data/Actors/{0}".F(fil.Name), this.camera, this.Map.StartPosition));
+					this.Player = players[Playername];
 					break;
 				}
+				else
+					throw new FileNotFoundException("File Not found: Data/Actors/{0}".F(fil.Name));
 		}
 
-		public void ReadMaps(string path)
+		public void ReadMaps(string path, IntPtr renderer)
 		{
 			var MapsDir = new DirectoryInfo(path);
 
 			foreach (var fil in MapsDir.GetFiles("*.map", SearchOption.AllDirectories))
 				if (fil.Length > 0 && fil.Exists)
-					this.Maps.Add(fil.Name.Split('.')[0], new Map(fil.FullName, this.renderer, Environment.CurrentDirectory + "/Data/Tileset/"));
+					this.Maps.Add(fil.Name.Split('.')[0], new Map(fil.FullName, renderer, "{0}/Data/Tileset/".F(Environment.CurrentDirectory)));
 
-			Game.Print(LogType.Debug, GetType().ToString(), "Found {0} Maps!".F(this.Maps.Count));
+			Game.Print(LogType.Debug, GetType().ToString(), "Found {0} Map(s)!".F(this.Maps.Count));
 		}
 
 		public void OnMapCreated(object source, EventArgs e)
 		{
-			this.Map.loaded = true;
 			Game.Print(LogType.Debug, GetType().ToString(), "Map loaded!");
 		}
 
 		public void Update()
 		{
-			this.Player.Update(ref this.Map.Layers);
+			if (this.Map == null || this.Player == null)
+				return;
 
-			if (this.Map != null)
-				this.Map.Update();
+			this.Player.Update(ref this.Map.Layers);
+			this.Map.Update();
 		}
 
 		public void Events(SDL2.SDL.SDL_Event e)
 		{
-			if (this.Map != null)
-			{
+			if (this.Map == null)
+				return;
 				this.Map.Events(e);
-				this.Player.Events(e, this.Map.TileSize, ref this.Map.Layers);
-			}
+				this.Player.Events(e, ref this.Map.Layers);
 		}
 
 		public void Render(Vector2<int> screensize, IntPtr screen_surface)
 		{
-			if (this.Player == null)
+			if (this.Player == null || this.Map == null)
 				return;
 
 			this.ScreenBsize = screensize;
 			this.camera = this.Player.camera;
 
-			if (this.Map != null)
-				this.Map.Render(this.camera, screen_surface, this.ScreenBsize, ref this.Player, this.type);
+			this.Map.Render(this.camera, screen_surface, this.ScreenBsize, ref this.Player, this.worldtype);
 		}
 
 		public void Close()
 		{
-			this.Player.Close();
+			if (this.Player != null)
+				this.Player.Close();
 
 			if (this.Map != null)
 				this.Map.Close();
 		}
+
 		/*
 		public void CreateMap(int width, int height, int tw, int th)
 		{

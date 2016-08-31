@@ -16,11 +16,6 @@ namespace RPGEngine
 		public RectangleF collisionRect;
 		SDL_Rect collision_overlay;
 
-		byte type2Color_R = Color.CornflowerBlue.R;
-		byte type2Color_G = Color.CornflowerBlue.G;
-		byte type2Color_B = Color.CornflowerBlue.B;
-		byte type2Color_A = Color.CornflowerBlue.A;
-
 		int type;
 
 		public Tile(IntPtr image, Vector2<int> source, Vector2<int> size, Vector2<int> target, int type, bool passable, Vector2<float> camera)
@@ -45,11 +40,11 @@ namespace RPGEngine
 				this.collisionRect.Height = this.offset.h;
 				this.collisionRect.Width = this.offset.w;
 
-				collision_overlay.h = (int)collisionRect.Height;
-				collision_overlay.w = (int)collisionRect.Width;
+				this.collision_overlay.h = (int)this.collisionRect.Height;
+				this.collision_overlay.w = (int)this.collisionRect.Width;
 
-				collisionRect.X = collision_overlay.x = this.offset.x;
-				collisionRect.Y = collision_overlay.y = this.offset.y;
+				this.collisionRect.X = this.collision_overlay.x = this.offset.x;
+				this.collisionRect.Y = this.collision_overlay.y = this.offset.y;
 			}
 		}
 
@@ -84,17 +79,17 @@ namespace RPGEngine
 			this.offset.x = (int)(TargetRect.x - this.camera.X + (screensize.X / 2));
 			this.offset.y = (int)(TargetRect.y - this.camera.Y + (screensize.Y / 2));
 
-			SDL_RenderCopy(renderer, this.image, ref SourceRect, ref offset);
+			this.collisionRect.X = this.collision_overlay.x = this.offset.x;
+			this.collisionRect.Y = this.collision_overlay.y = this.offset.y;
 
-			collisionRect.X = collision_overlay.x = this.offset.x;
-			collisionRect.Y = collision_overlay.y = this.offset.y;
+			this.collision_overlay.h = (int)this.collisionRect.Height;
+			this.collision_overlay.w = (int)this.collisionRect.Width;
 
-			collision_overlay.h = (int)collisionRect.Height;
-			collision_overlay.w = (int)collisionRect.Width;
-
-			if (this.type == 2 && debug)
-				Graphic.DrawRect(renderer, (int)collisionRect.X, (int)collisionRect.Y, 
-					(int)collisionRect.Width, (int)collisionRect.Height, Color.Red);
+			SDL_RenderCopy(renderer, this.image, ref this.SourceRect, ref this.offset);
+			
+			if (this.type == 2 && this.debug)
+				Graphic.DrawRect(renderer, (int)this.collisionRect.X, (int)this.collisionRect.Y, 
+					(int)this.collisionRect.Width, (int)this.collisionRect.Height, Color.Red);
 
 			return 0;
 		}

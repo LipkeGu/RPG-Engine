@@ -44,10 +44,25 @@
 
 		public class PlayerSettings
 		{
-			public string Name;
+			string name;
+			uint health;
+
 			public PlayerSettings()
 			{
-				this.Name = "Brendan";
+				this.name = "Brendan";
+				this.health = 100;
+			}
+
+			public string Name
+			{
+				get { return this.name; }
+				set { this.name = value; }
+			}
+
+			public uint Health
+			{
+				get { return this.health; }
+				set { this.health = value; }
 			}
 		}
 

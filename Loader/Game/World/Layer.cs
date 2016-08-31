@@ -30,7 +30,8 @@ namespace RPGEngine
 				tile.Value.Events(e);
 		}
 
-		public void Render(IntPtr renderer, IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public void Render(IntPtr renderer, IntPtr screen_surface, Vector2<float> camera, 
+			Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
 			foreach (var tile in this.Tiles)
 				tile.Value.Render(renderer, screen_surface, camera, screensize, type);

@@ -11,7 +11,7 @@ namespace RPGEngine
 
 		int width;
 		int height;
-		Vector2<int> FrameSize;
+		Vector2<int> frameSize;
 
 		public SDL.SDL_Rect SourceRect;
 		public SDL.SDL_Rect TargetRect;
@@ -34,13 +34,13 @@ namespace RPGEngine
 			this.image = SDL_image.IMG_LoadTexture(this.renderer, this.filename);
 			SDL.SDL_QueryTexture(this.image, out format, out access, out width, out height);
 
-			this.FrameSize = new Vector2<int>(this.width / 4, this.height / 4);
+			this.frameSize = new Vector2<int>(this.width / 4, this.height / 4);
 
-			this.TargetRect.h = this.SourceRect.h = (int)this.FrameSize.Y;
-			this.TargetRect.w = this.SourceRect.w = (int)this.FrameSize.X;
+			this.TargetRect.h = this.SourceRect.h = (int)this.frameSize.Y;
+			this.TargetRect.w = this.SourceRect.w = (int)this.frameSize.X;
 
-			this.TargetRect.x = this.SourceRect.x = 0 * (int)this.FrameSize.X;
-			this.TargetRect.y = this.SourceRect.y = 0 * (int)this.FrameSize.Y;
+			this.TargetRect.x = this.SourceRect.x = 0 * (int)this.frameSize.X;
+			this.TargetRect.y = this.SourceRect.y = 0 * (int)this.frameSize.Y;
 		}
 
 		public IntPtr Renderer
@@ -49,18 +49,18 @@ namespace RPGEngine
 			get { return this.renderer; }
 		}
 
-		public Vector2<int> Size
+		public Vector2<int> FrameSize
 		{
 			set
 			{
-				this.FrameSize.X = (this.width / value.X);
-				this.FrameSize.Y = (this.height / value.Y);
+				this.frameSize.X = (this.width / value.X);
+				this.frameSize.Y = (this.height / value.Y);
 
-				this.TargetRect.h = this.SourceRect.h = this.FrameSize.Y;
-				this.TargetRect.w = this.SourceRect.w = this.FrameSize.X;
+				this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
+				this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
 			}
 
-			get { return this.FrameSize; }
+			get { return this.frameSize; }
 		}
 
 		public int Width

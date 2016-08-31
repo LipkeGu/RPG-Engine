@@ -8,7 +8,6 @@ namespace RPGEngine
 {
 	public class Player
 	{
-		string name;
 		bool debug;
 
 		IniFile player_file;
@@ -25,32 +24,26 @@ namespace RPGEngine
 		public Vector2<float> camera;
 		public Vector2<float> Position;
 
-		Vector2<int> Frames, Frame, Velocity;
+		Vector2<int> Frames, frame;
 
-		int movingspeed;
-
-		public Player(string name, IntPtr renderer, string filename, Vector2<float> camera, Vector2<float> startPos)
+		public Player(IntPtr renderer, string filename, Vector2<float> camera, Vector2<float> startPos)
 		{
-			if (!File.Exists(Path.Combine(filename)))
-				throw new FileNotFoundException(filename);
-
 			this.player_file = new IniFile(filename);
-			this.name = player_file.WertLesen("Info", "Name");
+			var name = player_file.WertLesen("Info", "Name");
 			this.movingtype = MovingType.Walk;
-			this.movingspeed = 4;
 			this.renderer = renderer;
 			this.debug = false;
 
 			this.camera = camera;
 
 
-			var walk_filename = Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", "Walk"));
-			var bike_filename = Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", "Bike"));
-			var dive_filename = Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", "Dive"));
+			var walk_filename = Path.Combine("Data/Actors/", name, this.player_file.WertLesen("Textures", "Walk"));
+			var bike_filename = Path.Combine("Data/Actors/", name, this.player_file.WertLesen("Textures", "Bike"));
+			var dive_filename = Path.Combine("Data/Actors/", name, this.player_file.WertLesen("Textures", "Dive"));
 
-			this.walk_texture = new Sprite(walk_filename, this.name, this.renderer);
-			this.bike_texture = new Sprite(bike_filename, this.name, this.renderer);
-			this.dive_texture = new Sprite(dive_filename, this.name, this.renderer);
+			this.walk_texture = new Sprite(walk_filename, name, this.renderer);
+			this.bike_texture = new Sprite(bike_filename, name, this.renderer);
+			this.dive_texture = new Sprite(dive_filename, name, this.renderer);
 
 			this.walk_texture.SourceRect.y += 14;
 			this.bike_texture.SourceRect.y += 14;
@@ -62,35 +55,34 @@ namespace RPGEngine
 
 			var frames = this.player_file.WertLesen("Info", "Frames").Split(',');
 			this.Frames = new Vector2<int>(int.Parse(frames[0]), int.Parse(frames[1]));
-
-			this.Frame = this.Velocity = new Vector2<int>(0, 0);
+			this.frame = new Vector2<int>(0,0);
 			this.Position = startPos;
 
 			switch (this.movingtype)
 			{
 				case MovingType.Walk:
-					this.walk_texture.Size = this.Frames;
+					this.walk_texture.FrameSize = this.Frames;
 
-					this.collisionRect.Width = this.walk_texture.Size.X;
-					this.collisionRect.Height = this.walk_texture.Size.Y;
+					this.collisionRect.Width = this.walk_texture.FrameSize.X;
+					this.collisionRect.Height = this.walk_texture.FrameSize.Y;
 					break;
 				case MovingType.Bike:
-					this.bike_texture.Size = this.Frames;
+					this.bike_texture.FrameSize = this.Frames;
 
-					this.collisionRect.Width = this.bike_texture.Size.X;
-					this.collisionRect.Height = this.bike_texture.Size.Y;
+					this.collisionRect.Width = this.bike_texture.FrameSize.X;
+					this.collisionRect.Height = this.bike_texture.FrameSize.Y;
 					break;
 				case MovingType.Dive:
-					this.dive_texture.Size = this.Frames;
+					this.dive_texture.FrameSize = this.Frames;
 
-					this.collisionRect.Width = this.dive_texture.Size.X;
-					this.collisionRect.Height = this.dive_texture.Size.Y;
+					this.collisionRect.Width = this.dive_texture.FrameSize.X;
+					this.collisionRect.Height = this.dive_texture.FrameSize.Y;
 					break;
 				default:
-					this.walk_texture.Size = this.Frames;
+					this.walk_texture.FrameSize = this.Frames;
 
-					this.collisionRect.Width = this.walk_texture.Size.X;
-					this.collisionRect.Height = this.walk_texture.Size.Y;
+					this.collisionRect.Width = this.walk_texture.FrameSize.X;
+					this.collisionRect.Height = this.walk_texture.FrameSize.Y;
 
 					break;
 			}
@@ -99,7 +91,7 @@ namespace RPGEngine
 			this.collision_overlay.h = (int)this.collisionRect.Height;
 		}
 
-		public Direction ResolveCollision(ref Layer layer)
+		Direction ResolveCollision(ref Layer layer)
 		{
 			var p_left = this.collisionRect.Left;
 			var p_right = this.collisionRect.Right;
@@ -128,10 +120,27 @@ namespace RPGEngine
 		}
 
 
-		public void Events(SDL.SDL_Event e, Vector2<int> tilesize, ref Dictionary<string, Layer> layers)
+		public void Events(SDL.SDL_Event e, ref Dictionary<string, Layer> layers)
 		{
 			var layer = layers["Layer2"];
 			var direction = ResolveCollision(ref layer);
+			var movingspeed = 0;
+
+			switch (this.movingtype)
+			{
+				case MovingType.Walk:
+					movingspeed = 4;
+					break;
+				case MovingType.Bike:
+					movingspeed = 8;
+					break;
+				case MovingType.Dive:
+					movingspeed = 2;
+					break;
+				default:
+					movingspeed = 0;
+					break;
+			}
 
 			switch (e.type)
 			{
@@ -140,22 +149,22 @@ namespace RPGEngine
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_UP)
 					{
 
-						this.Frame.Y = 3;
+						frame.Y = 3;
 						if (this.Position.Y > -1 && this.Position.Y < float.MaxValue)
 						{
 							switch (direction)
 							{
 								case Direction.Up:
-									this.Position.Y += this.movingspeed;
+									this.Position.Y += movingspeed;
 									break;
 								case Direction.Down:
-									this.Position.Y -= this.movingspeed;
+									this.Position.Y -= movingspeed;
 									break;
 								case Direction.Left:
 								case Direction.Right:
 								case Direction.None:
 								default:
-									this.Position.Y -= this.movingspeed;
+									this.Position.Y -= movingspeed;
 									break;
 							}
 						}
@@ -165,22 +174,22 @@ namespace RPGEngine
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_DOWN)
 					{
-						this.Frame.Y = 0;
+						frame.Y = 0;
 						if (this.Position.Y > -1 && this.Position.Y < float.MaxValue)
 						{
 							switch (direction)
 							{
 								case Direction.Down:
-									this.Position.Y -= this.movingspeed;
+									this.Position.Y -= movingspeed;
 									break;
 								case Direction.Up:
-									this.Position.Y += this.movingspeed;
+									this.Position.Y += movingspeed;
 									break;
 								case Direction.Left:
 								case Direction.Right:
 								case Direction.None:
 								default:
-									this.Position.Y += this.movingspeed;
+									this.Position.Y += movingspeed;
 									break;
 							}
 						}
@@ -190,22 +199,22 @@ namespace RPGEngine
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_LEFT)
 					{
-						this.Frame.Y = 1;
+						frame.Y = 1;
 						if (this.Position.X > -1 && this.Position.X < float.MaxValue)
 						{
 							switch (direction)
 							{
 								case Direction.Left:
-									this.Position.X += this.movingspeed;
+									this.Position.X += movingspeed;
 									break;
 								case Direction.Right:
-									this.Position.X -= this.movingspeed;
+									this.Position.X -= movingspeed;
 									break;
 								case Direction.Up:
 								case Direction.Down:
 								case Direction.None:
 								default:
-									this.Position.X -= this.movingspeed;
+									this.Position.X -= movingspeed;
 									break;
 							}
 
@@ -216,22 +225,22 @@ namespace RPGEngine
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_RIGHT)
 					{
-						this.Frame.Y = 2;
+						frame.Y = 2;
 						if (this.Position.X >= 0 && this.Position.X < float.MaxValue)
 						{
 							switch (direction)
 							{
 								case Direction.Right:
-									this.Position.X -= this.movingspeed;
+									this.Position.X -= movingspeed;
 									break;
 								case Direction.Left:
-									this.Position.X += this.movingspeed;
+									this.Position.X += movingspeed;
 									break;
 								case Direction.Up:
 								case Direction.Down:
 								case Direction.None:
 								default:
-									this.Position.X += this.movingspeed;
+									this.Position.X += movingspeed;
 									break;
 							}
 						}
@@ -245,15 +254,12 @@ namespace RPGEngine
 						{
 							case MovingType.Walk:
 								this.movingtype = MovingType.Bike;
-								this.movingspeed = 8;
 								break;
 							case MovingType.Bike:
 								this.movingtype = MovingType.Dive;
-								this.movingspeed = 2;
 								break;
 							case MovingType.Dive:
 								this.movingtype = MovingType.Walk;
-								this.movingspeed = 4;
 								break;
 							default:
 								break;
@@ -271,28 +277,28 @@ namespace RPGEngine
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_RIGHT || e.key.keysym.sym == SDL.SDL_Keycode.SDLK_LEFT ||
 					e.key.keysym.sym == SDL.SDL_Keycode.SDLK_UP || e.key.keysym.sym == SDL.SDL_Keycode.SDLK_DOWN)
 					{
-						if (this.Frame.X < 3)
-							this.Frame.X += 1;
+						if (frame.X < 3)
+							frame.X += 1;
 						else
-							this.Frame.X = 1;
+							frame.X = 1;
 					}
 					#endregion
 					break;
 				case SDL.SDL_EventType.SDL_KEYUP:
 					#region "Movement"
-					this.Frame.X = 0;
+					frame.X = 0;
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_UP)
-						this.Frame.Y = 3;
+						frame.Y = 3;
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_DOWN)
-						this.Frame.Y = 0;
+						frame.Y = 0;
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_LEFT)
-						this.Frame.Y = 1;
+						frame.Y = 1;
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_RIGHT)
-						this.Frame.Y = 2;
+						frame.Y = 2;
 					#endregion
 					break;
 				default:
@@ -306,10 +312,10 @@ namespace RPGEngine
 				switch (this.movingtype)
 				{
 					case MovingType.Walk:
-						this.walk_texture.Size = this.Frames;
+						this.walk_texture.FrameSize = this.Frames;
 
-						this.walk_texture.SourceRect.x = (int)(this.Frame.X * this.walk_texture.Size.X);
-						this.walk_texture.SourceRect.y = +14 + (int)(this.Frame.Y * this.walk_texture.Size.Y);
+						this.walk_texture.SourceRect.x = (frame.X * this.walk_texture.FrameSize.X);
+						this.walk_texture.SourceRect.y = +14 + (frame.Y * this.walk_texture.FrameSize.Y);
 						this.walk_texture.SourceRect.h -= 14;
 
 						this.collisionRect.X = this.walk_texture.TargetRect.x = (int)this.Position.X;
@@ -317,10 +323,10 @@ namespace RPGEngine
 
 						break;
 					case MovingType.Bike:
-						this.bike_texture.Size = this.Frames;
+						this.bike_texture.FrameSize = this.Frames;
 
-						this.bike_texture.SourceRect.x = (int)(this.Frame.X * this.bike_texture.Size.X);
-						this.bike_texture.SourceRect.y = +14 + (int)(this.Frame.Y * this.bike_texture.Size.Y);
+						this.bike_texture.SourceRect.x = (frame.X * this.bike_texture.FrameSize.X);
+						this.bike_texture.SourceRect.y = + 14 + (frame.Y * this.bike_texture.FrameSize.Y);
 						this.bike_texture.SourceRect.h -= 14;
 
 						this.collisionRect.X = this.bike_texture.TargetRect.x = (int)this.Position.X;
@@ -328,10 +334,10 @@ namespace RPGEngine
 
 						break;
 					case MovingType.Dive:
-						this.dive_texture.Size = this.Frames;
+						this.dive_texture.FrameSize = this.Frames;
 
-						this.dive_texture.SourceRect.x = (int)(this.Frame.X * this.dive_texture.Size.X);
-						this.dive_texture.SourceRect.y = (int)(this.Frame.Y * this.dive_texture.Size.Y);
+						this.dive_texture.SourceRect.x = (frame.X * this.dive_texture.FrameSize.X);
+						this.dive_texture.SourceRect.y = (frame.Y * this.dive_texture.FrameSize.Y);
 
 						this.collisionRect.X = this.dive_texture.TargetRect.x = (int)this.Position.X;
 						this.collisionRect.Y = this.dive_texture.TargetRect.y = (int)this.Position.Y;
@@ -389,14 +395,14 @@ namespace RPGEngine
 					this.collisionRect.Width = this.walk_texture.TargetRect.w;
 					this.collisionRect.Height = this.walk_texture.TargetRect.h;
 
-					this.collisionRect.X = this.walk_texture.TargetRect.x = (screensize.X / 2) - (this.walk_texture.Size.X / 2);
-					this.collisionRect.Y = this.walk_texture.TargetRect.y = (screensize.Y / 2) - (this.walk_texture.Size.Y / 2);
+					this.collisionRect.X = this.walk_texture.TargetRect.x = (screensize.X / 2) - (this.walk_texture.FrameSize.X / 2);
+					this.collisionRect.Y = this.walk_texture.TargetRect.y = (screensize.Y / 2) - (this.walk_texture.FrameSize.Y / 2);
 
 					this.walk_texture.Render();
 					break;
 				case MovingType.Bike:
-					this.collisionRect.X = this.bike_texture.TargetRect.x = (screensize.X / 2) - (this.bike_texture.Size.X / 2);
-					this.collisionRect.Y = this.bike_texture.TargetRect.y = (screensize.Y / 2) - (this.bike_texture.Size.Y / 2);
+					this.collisionRect.X = this.bike_texture.TargetRect.x = (screensize.X / 2) - (this.bike_texture.FrameSize.X / 2);
+					this.collisionRect.Y = this.bike_texture.TargetRect.y = (screensize.Y / 2) - (this.bike_texture.FrameSize.Y / 2);
 
 					this.collisionRect.Width = this.bike_texture.TargetRect.w;
 					this.collisionRect.Height = this.bike_texture.TargetRect.h;
@@ -405,8 +411,8 @@ namespace RPGEngine
 
 					break;
 				case MovingType.Dive:
-					this.collisionRect.X = this.dive_texture.TargetRect.x = (screensize.X / 2) - (this.dive_texture.Size.X / 2);
-					this.collisionRect.Y = this.dive_texture.TargetRect.y = (screensize.Y / 2) - (this.dive_texture.Size.Y / 2);
+					this.collisionRect.X = this.dive_texture.TargetRect.x = (screensize.X / 2) - (this.dive_texture.FrameSize.X / 2);
+					this.collisionRect.Y = this.dive_texture.TargetRect.y = (screensize.Y / 2) - (this.dive_texture.FrameSize.Y / 2);
 
 					this.collisionRect.Width = this.dive_texture.TargetRect.w;
 					this.collisionRect.Height = this.dive_texture.TargetRect.h;
