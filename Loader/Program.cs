@@ -3,14 +3,12 @@ namespace RPGEngine
 {
 	class Program
 	{
-		public static RPGEngine Engine;
+		public static Engine Engine;
 		[STAThread]
 		static void Main(string[] args)
 		{
-			Engine = new RPGEngine(args);
+			Engine = new Engine(args);
 			Engine.Init();
-			Engine.Close();
-
 		}
 	}
 }

@@ -5,25 +5,9 @@ using static SDL2.SDL_image;
 
 namespace RPGEngine
 {
-	public class ErrorEventArgs : EventArgs
-	{
-		public string Source { get; set; }
-		public string Message { get; set; }
-	}
 
-	public class StateEventArgs : EventArgs
-	{
-		public string Source { get; set; }
-		public string Message { get; set; }
-	}
 
-	public class FinishEventArgs : EventArgs
-	{
-		public string Source { get; set; }
-		public string Message { get; set; }
-	}
-
-	public class Graphic
+	public class Video
 	{
 		public enum LoadIMGFlags { normal, texture }
 		public delegate void VideoInitDoneEventHandler(object source, FinishEventArgs args);
@@ -36,7 +20,6 @@ namespace RPGEngine
 
 		#region private Fields
 		IntPtr window, renderer;
-		RenderType renderType;
 		SDL_WindowFlags flags;
 		int width;
 		int height;
@@ -79,43 +62,44 @@ namespace RPGEngine
 			this.height = config.Engine.Height;
 			this.title = config.Game.Title;
 
-			OnVideoInitState(GetType().ToString(), "Waiting for the Video subsystem...");
-			this.renderType = RenderType.SDL;
-
+			OnVideoInitState(GetType().ToString(), "Waiting for the Video Subsystem...");
+			
 			var errnum = -1;
 			this.flags = config.Engine.WindowFlags;
 
-			errnum = SDL_Init(SDL_INIT_VIDEO);
-			if (errnum == -1)
-				OnVideoInitError(GetType().ToString(), "SDL_Init(): " + SDL_GetError());
-
 			errnum = IMG_Init(IMG_InitFlags.IMG_INIT_PNG);
 			if (errnum == -1)
-				OnVideoInitError(GetType().ToString(), "IMG_Init(): " + SDL_GetError());
+				OnVideoInitError(GetType().ToString(), "IMG_Init(): {0}".F(SDL_GetError()));
 
 			OnVideoInitState(GetType().ToString(), "Image subsystem initialized!");
 
 			this.window = SDL_CreateWindow(this.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this.width, this.height, this.flags);
 
-			if (this.window == null)
-				OnVideoInitError(GetType().ToString(), "SDL_CreateWindow(): " + SDL_GetError());
+			if (this.window == IntPtr.Zero)
+				OnVideoInitError(GetType().ToString(), "SDL_CreateWindow(): {0}".F(SDL_GetError()));
 			else
-			{
 				OnVideoInitState(GetType().ToString(), "Window created!");
 
-				this.renderer = SDL_CreateRenderer(this.window, -1, 6);
+			this.renderer = SDL_CreateRenderer(this.window, 0, (uint)SDL_RendererFlags.SDL_RENDERER_ACCELERATED | 
+				(uint)SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
-				if (this.renderer == IntPtr.Zero)
-					OnVideoInitError(GetType().ToString(), "SDL_CreateRenderer():" + SDL_GetError());
-				else
-				{
-					errnum = 0;
-					OnVideoInitState(GetType().ToString(), "Renderer created!");
+			if (this.renderer == IntPtr.Zero)
+				OnVideoInitError(GetType().ToString(), "SDL_CreateRenderer(): {0}".F(SDL_GetError()));
+			else
+				OnVideoInitState(GetType().ToString(), "Renderer created!");
 
-					if (errnum == 0)
-						OnVideoInitDone("Video Subsystem initialized...");
-				}
-			}
+
+			if (SDL_SetHint("SDL_HINT_RENDER_VSYNC", "1") == SDL_bool.SDL_FALSE)
+				OnVideoInitError(GetType().ToString(), "SDL_SetHint(): 'Vsync' is not enabled!");
+			else
+				OnVideoInitState(GetType().ToString(), "'VSync' enabled!");
+
+			if (SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "1") == SDL_bool.SDL_FALSE)
+				OnVideoInitError(GetType().ToString(), "SDL_SetHint(): 'Linear texture filtering' is not enabled!");
+			else
+				OnVideoInitState(GetType().ToString(), "'Linear texture filtering' enabled!");
+
+			OnVideoInitDone("starting Game...");
 		}
 
 		/// <summary>
@@ -163,13 +147,15 @@ namespace RPGEngine
 		{
 			IMG_Quit();
 			SDL_VideoQuit();
+			SDL_DestroyRenderer(this.renderer);
+			SDL_DestroyWindow(this.window);
 		}
 
 		#region Events
 		protected virtual void OnVideoInitDone(string message)
 		{
 			var fe = new FinishEventArgs();
-			fe.Source = GetType().ToString();
+			fe.Source = this.GetType().ToString();
 			fe.Message = message;
 
 			VideoInitDone?.Invoke(this, fe);

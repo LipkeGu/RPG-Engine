@@ -57,9 +57,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Serialization" />
-    <Reference Include="OpenTK">
-      <HintPath>OpenTK.dll</HintPath>
-    </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\SDL2-CS.dll</HintPath>
     </Reference>
@@ -77,7 +74,7 @@
     <Compile Include="Game\World\Tile.cs" />
     <Compile Include="Game\UserInferface.cs" />
     <Compile Include="Game\World\World.cs" />
-    <Compile Include="Engine\Graphic.cs" />
+    <Compile Include="Engine\Video.cs" />
     <Compile Include="Engine\Input.cs" />
     <Compile Include="Parsers\INIFile.cs" />
     <Compile Include="Parsers\Sprite.cs" />

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace RPGEngine
 {
-	class UserInferface
+	public class UserInferface
 	{
 		public Dictionary<string, Sprite> Textures;
 		IntPtr renderer;
@@ -26,39 +26,39 @@ namespace RPGEngine
 
 		public void AddTexture(Sprite texture)
 		{
-			if (!this.Textures.ContainsKey(texture.Alias))
-				this.Textures.Add(texture.Alias, texture);
+			if (!this.Textures.ContainsKey(texture.Filename))
+				this.Textures.Add(texture.Filename, texture);
 		}
 
 		public void Update()
 		{
-			foreach (var texture in this.Textures)
-				texture.Value.Update();
+			foreach (var texture in this.Textures.Values)
+				texture.Update();
 		}
 
 		public void Events(SDL.SDL_Event e)
 		{
-			foreach (var texture in this.Textures)
-				texture.Value.Events(e);
+			foreach (var texture in this.Textures.Values)
+				texture.Events(e);
 		}
 
 		public void Close()
 		{
-			foreach (var texture in this.Textures)
-				texture.Value.Close();
+			foreach (var texture in this.Textures.Values)
+				texture.Close();
 
 			this.Textures.Clear();
 		}
 
 		public void Render(IntPtr windows_surface)
 		{
-			SDL.SDL_SetRenderDrawColor(this.renderer, 255, 0, 0, 255);
+			SDL.SDL_SetRenderDrawColor(this.renderer, byte.MaxValue, byte.MinValue, byte.MinValue, byte.MaxValue);
 			SDL.SDL_RenderDrawRect(this.renderer, ref this.TileScreen);
 
-			foreach (var texture in this.Textures)
-				texture.Value.Render();
+			foreach (var texture in this.Textures.Values)
+				texture.Render();
 
-
+			SDL.SDL_SetRenderDrawColor(this.renderer, byte.MinValue, byte.MinValue, byte.MinValue, byte.MaxValue);
 
 		}
 	}

@@ -7,8 +7,8 @@ namespace RPGEngine
 	public class World
 	{
 		Vector2<float> camera;
-		Map Map;
-		Player Player;
+		Map map;
+		Player player;
 
 		Vector2<int> ScreenBsize;
 		Dictionary<string, Map> Maps;
@@ -32,10 +32,10 @@ namespace RPGEngine
 			
 			if (this.Maps.Count > 0)
 			{
-				this.Map = this.Maps["TestMap"];
-				this.Map.Mapcreated += OnMapCreated;
+				this.map = this.Maps["TestMap"];
+				this.map.Mapcreated += OnMapCreated;
 
-				this.Map.Load();
+				this.map.Load();
 			}
 			
 			this.ReadActors(Playername, actorsDirectory, renderer);
@@ -49,8 +49,8 @@ namespace RPGEngine
 			foreach (var fil in actorsDir.GetFiles("{0}.ini".F(Playername), SearchOption.AllDirectories))
 				if (fil.Length > 0 && fil.Exists)
 				{
-					players.Add(Playername, new Player(renderer, "Data/Actors/{0}".F(fil.Name), this.camera, this.Map.StartPosition));
-					this.Player = players[Playername];
+					players.Add(Playername, new Player(renderer, "Data/Actors/{0}".F(fil.Name), this.camera, this.map.StartPosition));
+					this.player = players[Playername];
 					break;
 				}
 				else
@@ -75,39 +75,43 @@ namespace RPGEngine
 
 		public void Update()
 		{
-			if (this.Map == null || this.Player == null)
+			if (this.map == null || this.player == null)
 				return;
 
-			this.Player.Update(ref this.Map.Layers);
-			this.Map.Update();
+			this.player.Update();
+			this.map.Update();
 		}
 
 		public void Events(SDL2.SDL.SDL_Event e)
 		{
-			if (this.Map == null)
+			if (this.map == null)
 				return;
-				this.Map.Events(e);
-				this.Player.Events(e, ref this.Map.Layers);
+
+			this.map.Events(e);
+			this.player.Events(e, ref this.map.Layers);
 		}
 
 		public void Render(Vector2<int> screensize, IntPtr screen_surface)
 		{
-			if (this.Player == null || this.Map == null)
+			if (this.player == null || this.map == null)
 				return;
 
 			this.ScreenBsize = screensize;
-			this.camera = this.Player.camera;
+			this.camera = this.player.Camera;
 
-			this.Map.Render(this.camera, screen_surface, this.ScreenBsize, ref this.Player, this.worldtype);
+			this.map.Render(this.camera, ref screen_surface, this.ScreenBsize, ref this.player, this.worldtype);
+
+			if (this.player == null)
+				Console.WriteLine("blub");
 		}
 
 		public void Close()
 		{
-			if (this.Player != null)
-				this.Player.Close();
+			if (this.player != null)
+				this.player.Close();
 
-			if (this.Map != null)
-				this.Map.Close();
+			if (this.map != null)
+				this.map.Close();
 		}
 
 		/*

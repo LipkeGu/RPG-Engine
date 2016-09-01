@@ -6,35 +6,35 @@ namespace RPGEngine
 {
 	public class Game
 	{
-		RPGEngine Engine;
-		Text Text;
+		Video video;
+		Audio audio;
+		Text text;
+		Settings config;
 
-		UserInferface Interface;
 		static string stext;
+		World world;
+		SDL_Event events;
 
-		World World;
-		SDL_Event engine_event;
-
-		public Game(RPGEngine Engine, Text text)
+		public Game(Video video, Text text, Audio audio, Settings config)
 		{
-			this.Engine = Engine;
-			this.Text = text;
-			this.Interface = new UserInferface(Engine.Graphics.Renderer);
+			this.video = video;
+			this.text = text;
+			this.audio = audio;
+			this.config = config;
 		}
 
-		public void Events()
+		public void Events(ref bool running)
 		{
-			while(SDL_PollEvent(out this.engine_event) != 0)
+			while(SDL_PollEvent(out this.events) != 0)
 			{
-				switch (this.engine_event.type)
+				switch (this.events.type)
 				{
 					case SDL_EventType.SDL_QUIT:
-						this.Engine.running = false;
+						running = false;
 						break;
 					case SDL_EventType.SDL_KEYDOWN:
 					case SDL_EventType.SDL_KEYUP:
-						this.World.Events(this.engine_event);
-						this.Interface.Events(this.engine_event);
+						this.world.Events(this.events);
 						break;
 					default:
 						break;
@@ -44,39 +44,35 @@ namespace RPGEngine
 
 		public int Start()
 		{
-			this.World = new World(
-				this.Engine.Config.Player.Name,
-				this.Engine.Config.Engine.MapDirectory,
-				this.Engine.Config.Engine.ActorDirectory,
-				this.Engine.Graphics.Renderer,
+			this.world = new World(
+				this.config.Player.Name,
+				this.config.Engine.MapDirectory,
+				this.config.Engine.ActorDirectory,
+				this.video.Renderer,
 				this.WindowSize(),
-				this.Engine.Config.Engine.Worldmode);
+				this.config.Engine.Worldmode);
 
-			return World != null ? 0 : -1;
+			return world != null ? 0 : -1;
 		}
 
 		public void Update()
 		{
-			this.World.Update();
-			this.Interface.Update();
+			this.world.Update();
 		}
 
 		public void Render(IntPtr renderer)
 		{
-			this.Engine.Graphics.Begin(Color.Black);
+			this.video.Begin(Color.Black);
 
-			this.Interface.Render(Engine.Graphics.WindowSurface);
-			this.World.Render(this.WindowSize(), Engine.Graphics.WindowSurface);
-
-			this.Engine.Graphics.End();
+			this.world.Render(this.WindowSize(), this.video.WindowSurface);
+		
+			this.video.End();
 		}
 
 		public void Close()
 		{
-			if (World != null)
-				this.World.Close();
-
-			this.Interface.Close();
+			if (world != null)
+				this.world.Close();
 		}
 
 		/// <summary>
@@ -122,7 +118,7 @@ namespace RPGEngine
 			var w = 0;
 			var h = 0;
 
-			SDL_GetWindowSize(this.Engine.Graphics.Window, out w, out h);
+			SDL_GetWindowSize(this.video.Window, out w, out h);
 			return new Vector2<int>(w, h);
 		}
 

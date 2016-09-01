@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Threading;
-
 using System.Xml.Serialization;
 using static SDL2.SDL;
 
@@ -18,7 +19,7 @@ namespace RPGEngine
 		public SDL_Keycode key { get; set; }
 	}
 
-	public class RPGEngine
+	public class Engine
 	{
 		bool paused;
 		bool started;
@@ -28,30 +29,34 @@ namespace RPGEngine
 		uint pausetime;
 		string[] args;
 
-		public Graphic Graphics;
+		public Video Video;
 		public Audio Audio;
 		public Text Text;
+		public Input Input;
+		public UserInferface UI;
+
+		public static Dictionary<string, Sprite> Textures = new Dictionary<string, Sprite>();
 
 		Game Game;
 		public Settings Config;
 
-		SDL_Event Events;
 		[XmlIgnore]
 		public string SettingsFile;
 		XmlManager<Settings> XMLSettingsReader;
 
-		public bool haveVideo, running;
+		public bool haveVideo, haveAudio, haveInput, running;
 
-		public RPGEngine(string[] args)
+		public Engine(string[] args)
 		{
 			this.args = args;
 
 			this.Config = new Settings();
-			this.Graphics = new Graphic();
+			this.Video = new Video();
 			this.Audio = new Audio();
+			this.Input = new Input();
+			this.UI = new UserInferface(Video.Renderer);
 
-			this.Game = new Game(this, this.Text);
-			this.Events = new SDL_Event();
+			this.Game = new Game(this.Video, this.Text, this.Audio, this.Config);
 			this.XMLSettingsReader = new XmlManager<Settings>();
 			this.haveVideo = this.running = false;
 
@@ -71,9 +76,51 @@ namespace RPGEngine
 				}
 
 
-			this.Graphics.VideoInitDone += OnVideoInitDone;
-			this.Graphics.VideoInitError += OnVideoInitError;
-			this.Graphics.VideoInitState += OnVideoInitState;
+			this.Video.VideoInitDone += OnVideoInitDone;
+			this.Video.VideoInitError += OnVideoInitError;
+			this.Video.VideoInitState += OnVideoInitState;
+
+			this.Audio.AudioInitDone += Audio_AudioInitDone;
+			this.Audio.AudioInitError += Audio_AudioInitError;
+			this.Audio.AudioInitState += Audio_AudioInitState;
+
+			this.Input.InputInitDone += Input_InputInitDone;
+			this.Input.InputInitError += Input_InputInitError;
+			this.Input.InputInitState += Input_InputInitState; 
+		}
+
+		private void Input_InputInitState(object source, StateEventArgs args)
+		{
+			Game.Print(LogType.Debug, args.Source, args.Message);
+		}
+
+		private void Input_InputInitError(object source, ErrorEventArgs args)
+		{
+			this.haveInput = false;
+			throw new Exception("{0}: {1}".F(args.Source, args.Message));
+		}
+
+		private void Input_InputInitDone(object source, FinishEventArgs args)
+		{
+			this.haveInput= true;
+			Game.Print(LogType.Debug, args.Source, args.Message);
+		}
+
+		private void Audio_AudioInitState(object source, StateEventArgs args)
+		{
+			Game.Print(LogType.Debug, args.Source, args.Message);
+		}
+
+		private void Audio_AudioInitError(object source, ErrorEventArgs args)
+		{
+			this.haveAudio = false;
+			throw new Exception("{0}: {1}".F(args.Source, args.Message));
+		}
+
+		private void Audio_AudioInitDone(object source, FinishEventArgs args)
+		{
+			this.haveAudio = true;
+			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
 		private void OnVideoInitState(object source, StateEventArgs args)
@@ -84,8 +131,7 @@ namespace RPGEngine
 		private void OnVideoInitError(object source, ErrorEventArgs e)
 		{
 			this.haveVideo = false;
-
-			Game.Print(LogType.Error, e.Source, e.Message);
+			throw new Exception("{0}: {1}".F(e.Source, e.Message));
 		}
 
 		[STAThread]
@@ -96,7 +142,7 @@ namespace RPGEngine
 			if (this.haveVideo)
 			{
 				var fontfile = Path.Combine(this.Config.Engine.FontDirectory, this.Config.Engine.FontFile);
-				this.Text = new Text(this.Graphics.Renderer, fontfile, 12, System.Drawing.Color.Black, System.Drawing.Color.White);
+				this.Text = new Text(this.Video.Renderer, fontfile, 12, Color.Black, Color.White);
 
 				if (this.Game.Start() == 0)
 				{
@@ -104,9 +150,9 @@ namespace RPGEngine
 					
 					while (this.running)
 					{
-						this.Game.Events();
+						this.Game.Events(ref this.running);
 						this.Game.Update();
-						this.Game.Render(this.Graphics.Renderer);
+						this.Game.Render(this.Video.Renderer);
 						this.regulate();
 					}
 				}
@@ -117,17 +163,30 @@ namespace RPGEngine
 
 		public void Init()
 		{
-			var videoInit = new Thread(new ParameterizedThreadStart(this.Graphics.Init));
+			SDL_Init(SDL_INIT_EVERYTHING);
+
+			var InputInit = new Thread(new ParameterizedThreadStart(this.Input.Init));
+			InputInit.Start(this.Config);
+
+			var AudioInit = new Thread(new ParameterizedThreadStart(this.Audio.Init));
+			AudioInit.Start(this.Config);
+
+			var videoInit = new Thread(new ParameterizedThreadStart(this.Video.Init));
 			videoInit.Start(this.Config);
 		}
 
 		public void Close()
 		{
-			if (this.Game != null)
-				this.Game.Close();
+			this.Game.Close();
+			this.Video.Close();
+			this.Audio.Close();
+			this.Input.Close();
+			this.UI.Close();
 
-			this.Graphics.Close();
+			foreach (var texture in Textures.Values)
+				texture.Close();
 
+			Textures.Clear();
 			SDL_Quit();
 		}
 
@@ -139,7 +198,7 @@ namespace RPGEngine
 				else
 					return (SDL_GetTicks() - this.starttime);
 			else
-				return 0;
+				return uint.MinValue;
 		}
 
 		public void pause()
@@ -166,7 +225,7 @@ namespace RPGEngine
 			{
 				this.paused = false;
 				this.starttime = SDL_GetTicks() - this.pausetime;
-				this.pausetime = 0;
+				this.pausetime = uint.MinValue;
 			}
 		}
 
@@ -189,7 +248,7 @@ namespace RPGEngine
 		void regulate()
 		{
 			if (this.FPS >= this.Config.Engine.FPS)
-				this.FPS = 0;
+				this.FPS = uint.MinValue;
 
 			this.FPS++;
 
@@ -200,6 +259,37 @@ namespace RPGEngine
 				SDL_Delay((1000 / this.Config.Engine.FPS) - this.GetTime());
 			else
 				this.start();
+		}
+
+		private static Sprite LoadTexture(IntPtr renderer, string filename, Vector2<int> frames)
+		{
+			var t = new Sprite(filename, renderer, frames);
+
+			if (!Textures.ContainsKey(filename))
+			{
+				Textures.Add(filename, t);
+				Game.Print(LogType.Debug, "Engine","Have now {0} Textures...".F(Textures.Count));
+				return t;
+			}
+			else
+				return GetTexture(filename, renderer, frames);
+		}
+
+		public static Sprite GetTexture(string filename, IntPtr renderer, Vector2<int> frames)
+		{
+			if (Textures.ContainsKey(filename))
+				return Textures[filename];
+			else
+				return LoadTexture(renderer, filename, frames);
+		}
+
+		public static void UnloadTextures(bool clear_cache = false)
+		{
+			foreach (var texture in Textures.Values)
+				texture.Close();
+
+			if (clear_cache)
+				Textures.Clear();
 		}
 	}
 }

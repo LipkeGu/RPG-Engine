@@ -1,33 +1,67 @@
 ﻿using System;
-
 using static SDL2.SDL;
 
 namespace RPGEngine
 {
 	public class Input
 	{
-		int errnum = -1;
-
 		IntPtr joystick = IntPtr.Zero;
-		IntPtr gameController = IntPtr.Zero;
+		string name;
 
-		public int Init()
+		public delegate void InputInitDoneEventHandler(object source, FinishEventArgs args);
+		public delegate void InputInitErrorEventHandler(object source, ErrorEventArgs args);
+		public delegate void InputInitStateEventHandler(object source, StateEventArgs args);
+
+		public event InputInitDoneEventHandler InputInitDone;
+		public event InputInitStateEventHandler InputInitState;
+		public event InputInitErrorEventHandler InputInitError;
+
+		public void Init(object obj)
 		{
-			errnum = SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
+			this.joystick = SDL_JoystickOpen(SDL_NumJoysticks() - 1);
+			this.name = SDL_JoystickName(this.joystick);
 
-			this.joystick = SDL_JoystickOpen(0);
-			this.gameController = SDL_GameControllerOpen(0);
+			if (this.joystick != IntPtr.Zero)
+				OnInputInitState(GetType().ToString(), "using Joystick '{0}'".F(this.name));
 
-			return errnum;
+			OnInputInitDone(GetType().ToString(), "Input initialized!");
 		}
 
 		public void Close()
 		{
 			if (this.joystick != IntPtr.Zero)
 				SDL_JoystickClose(this.joystick);
-
-			if (this.gameController != IntPtr.Zero)
-				SDL_GameControllerClose(this.gameController);
 		}
+
+		#region Events
+		protected virtual void OnInputInitDone(string source, string message)
+		{
+			var fe = new FinishEventArgs();
+			fe.Source = source;
+			fe.Message = message;
+
+			InputInitDone?.Invoke(this, fe);
+		}
+
+		protected virtual void OnInputInitError(string source, string ErrorMessage)
+		{
+			var errvtargs = new ErrorEventArgs();
+
+			errvtargs.Message = ErrorMessage;
+			errvtargs.Source = source;
+
+			InputInitError?.Invoke(this, errvtargs);
+		}
+
+		protected virtual void OnInputInitState(string source, string ErrorMessage)
+		{
+			var statevtargs = new StateEventArgs();
+
+			statevtargs.Message = ErrorMessage;
+			statevtargs.Source = source;
+
+			InputInitState?.Invoke(this, statevtargs);
+		}
+		#endregion
 	}
 }

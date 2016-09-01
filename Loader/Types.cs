@@ -1,5 +1,25 @@
-﻿namespace RPGEngine
+﻿using System;
+
+namespace RPGEngine
 {
+	public class ErrorEventArgs : EventArgs
+	{
+		public string Source { get; set; }
+		public string Message { get; set; }
+	}
+
+	public class StateEventArgs : EventArgs
+	{
+		public string Source { get; set; }
+		public string Message { get; set; }
+	}
+
+	public class FinishEventArgs : EventArgs
+	{
+		public string Source { get; set; }
+		public string Message { get; set; }
+	}
+
 	public struct Vector2<T>
 	{
 		public T X, Y;
@@ -25,6 +45,15 @@
 		Blended,
 		Wrapped,
 		Shaded
+	}
+
+	public enum TileType
+	{
+		Clear,
+		Grass,
+		Water,
+		Road
+
 	}
 
 	public enum Worldtype
@@ -54,5 +83,12 @@
 	{
 		SDL,
 		OpenGL,
+	}
+
+	public enum LayerType
+	{
+		Ground,
+		Overlay,
+		Collision
 	}
 }

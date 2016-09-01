@@ -11,6 +11,8 @@ namespace RPGEngine
 
 		int width;
 		int height;
+		Vector2<int> frames;
+
 		Vector2<int> frameSize;
 
 		public SDL.SDL_Rect SourceRect;
@@ -19,22 +21,23 @@ namespace RPGEngine
 		uint format;
 		int access;
 
-		string alias;
 		string filename;
 
-		public Sprite(string filename, string alias, IntPtr renderer)
+		public Sprite(string filename, IntPtr renderer, Vector2<int> frames)
 		{
-			this.filename = filename;
-			if (!File.Exists(this.filename))
-				throw new FileNotFoundException(this.filename);
+			if (!File.Exists(filename))
+				throw new FileNotFoundException(filename);
 
-			this.alias = alias;
+			this.filename = filename;
+			
+
 			this.renderer = renderer;
 
 			this.image = SDL_image.IMG_LoadTexture(this.renderer, this.filename);
 			SDL.SDL_QueryTexture(this.image, out format, out access, out width, out height);
 
-			this.frameSize = new Vector2<int>(this.width / 4, this.height / 4);
+			this.frames = frames;
+			this.frameSize = new Vector2<int>(this.width / frames.X, this.height / frames.Y);
 
 			this.TargetRect.h = this.SourceRect.h = (int)this.frameSize.Y;
 			this.TargetRect.w = this.SourceRect.w = (int)this.frameSize.X;
@@ -55,9 +58,6 @@ namespace RPGEngine
 			{
 				this.frameSize.X = (this.width / value.X);
 				this.frameSize.Y = (this.height / value.Y);
-
-				this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
-				this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
 			}
 
 			get { return this.frameSize; }
@@ -73,9 +73,14 @@ namespace RPGEngine
 			get { return this.height; }
 		}
 
-		public string Alias
+		public string Filename
 		{
-			get { return this.alias; }
+			get { return this.filename; }
+		}
+
+		public Vector2<int> Frames
+		{
+			get { return this.frames; }
 		}
 
 		public IntPtr Image
@@ -91,6 +96,8 @@ namespace RPGEngine
 
 		public void Update()
 		{
+			this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
+			this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
 		}
 
 		public void Events(SDL.SDL_Event e)

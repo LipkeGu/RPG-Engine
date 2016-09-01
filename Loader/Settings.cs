@@ -1,29 +1,48 @@
-﻿namespace RPGEngine
+﻿using SDL2;
+
+namespace RPGEngine
 {
 	public class Settings
 	{
 		public class EngineSettings
 		{
-			public int Width, Height;
-			public string Map, FontFile, MapDirectory, ActorDirectory, FontDirectory;
-			public int FontSize;
-			public uint FPS;
-			public SDL2.SDL.SDL_WindowFlags WindowFlags;
+			public int Width, Height, FontSize, Frequence;
+			public string Map, FontFile, MapDirectory, ActorDirectory, FontDirectory, TilesetDirectory;
+			public uint FPS, Size;
+			public SDL.SDL_WindowFlags WindowFlags;
 			public Worldtype Worldmode;
-
+			public byte AudioChannels, Silence;
+			public ushort Samples, format;
+			
 			public EngineSettings()
 			{
 				this.Worldmode = Worldtype.Normal;
+
+				#region "Video"
 				this.Width = 1024;
 				this.Height = 768;
-				this.FPS = 60;
-				this.WindowFlags = SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
+				this.FPS = 30;
+				this.WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
+				#endregion
 
 				this.MapDirectory = "Data/Maps/";
 				this.ActorDirectory = "Data/Actors/";
 				this.FontDirectory = "Data/Fonts/";
+				this.TilesetDirectory = "Data/Tilesets/";
+
+				#region "Text"
 				this.FontFile = "regular.ttf";
 				this.FontSize = 12;
+				#endregion
+
+				#region "Audio"
+				this.AudioChannels = 2;
+				this.Samples = 4096;
+				this.Frequence = 48000;
+				this.format = 33056;
+				this.Silence = byte.MinValue;
+				this.Size = uint.MinValue;
+				#endregion
 			}
 		}
 

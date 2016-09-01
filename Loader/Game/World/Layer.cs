@@ -6,13 +6,13 @@ namespace RPGEngine
 	public class Layer
 	{
 		public Dictionary<string, Tile> Tiles;
-		public int type;
+		public LayerType LayerType;
 		public float width;
 		public float height;
 
-		public Layer(Dictionary<string, Tile> tiles, int type, float width, float height)
+		public Layer(Dictionary<string, Tile> tiles, LayerType layertype, float width, float height)
 		{
-			this.type = type;
+			this.LayerType = layertype;
 			this.width = width;
 			this.height = height;
 			this.Tiles = tiles;
@@ -20,27 +20,26 @@ namespace RPGEngine
 
 		public void Update()
 		{
-			foreach (var tile in this.Tiles)
-				tile.Value.Update();
+			foreach (var tile in this.Tiles.Values)
+				tile.Update();
 		}
 
 		public void Events(SDL2.SDL.SDL_Event e)
 		{
-			foreach (var tile in this.Tiles)
-				tile.Value.Events(e);
+			foreach (var tile in this.Tiles.Values)
+				tile.Events(e);
 		}
 
-		public void Render(IntPtr renderer, IntPtr screen_surface, Vector2<float> camera, 
-			Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public void Render(IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
-			foreach (var tile in this.Tiles)
-				tile.Value.Render(renderer, screen_surface, camera, screensize, type);
+			foreach (var tile in this.Tiles.Values)
+				tile.Render(renderer, ref screen_surface, camera, screensize, type);
 		}
 
 		public void Close()
 		{
-			foreach (var tile in this.Tiles)
-				tile.Value.Close();
+			foreach (var tile in this.Tiles.Values)
+				tile.Close();
 
 			this.Tiles.Clear();
 		}
