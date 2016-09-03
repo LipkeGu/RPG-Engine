@@ -20,7 +20,7 @@ namespace RPGEngine
 
 	public class Engine
 	{
-		bool haveVideo, haveAudio, haveInput, paused, started, running;
+		bool haveVideo, paused, started, running;
 		
 		uint FPS;
 		uint starttime;
@@ -50,9 +50,9 @@ namespace RPGEngine
 			this.Video = new Video();
 			this.Audio = new Audio();
 			this.Input = new Input();
-			this.UI = new UserInferface(Video.Renderer);
+			this.UI = new UserInferface();
 
-			this.Game = new Game(this.Video, this.Text, this.Audio, this.Config);
+			this.Game = new Game(ref this.Video, ref this.Text, ref this.Audio, ref this.Config);
 			this.XMLSettingsReader = new XmlManager<Settings>();
 			this.haveVideo = this.running = false;
 
@@ -82,13 +82,11 @@ namespace RPGEngine
 
 		private void Input_InputInitError(object source, ErrorEventArgs args)
 		{
-			this.haveInput = false;
 			throw new Exception("{0}: {1}".F(args.Source, args.Message));
 		}
 
 		private void Input_InputInitDone(object source, FinishEventArgs args)
 		{
-			this.haveInput= true;
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
@@ -99,13 +97,11 @@ namespace RPGEngine
 
 		private void Audio_AudioInitError(object source, ErrorEventArgs args)
 		{
-			this.haveAudio = false;
 			throw new Exception("{0}: {1}".F(args.Source, args.Message));
 		}
 
 		private void Audio_AudioInitDone(object source, FinishEventArgs args)
 		{
-			this.haveAudio = true;
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
@@ -239,9 +235,9 @@ namespace RPGEngine
 				this.start();
 		}
 
-		private static Sprite LoadTexture(IntPtr renderer, string filename, Vector2<int> frames)
+		private static Sprite LoadTexture(ref IntPtr renderer, string filename, Vector2<int> frames)
 		{
-			var t = new Sprite(filename, renderer, frames);
+			var t = new Sprite(filename, ref renderer, frames);
 
 			if (!Textures.ContainsKey(filename))
 			{
@@ -250,23 +246,23 @@ namespace RPGEngine
 				return t;
 			}
 			else
-				return GetTexture(filename, renderer, frames);
+				return GetTexture(filename, ref renderer, frames);
 		}
 
-		public static void ConvertSurface(IntPtr surface, IntPtr renderer, string filename, Vector2<int> frames)
+		public static void ConvertSurface(IntPtr surface, ref IntPtr renderer, string filename, Vector2<int> frames)
 		{
-			var t = LoadTexture(renderer, filename, frames);
+			var t = LoadTexture(ref renderer, filename, frames);
 
 			if (!Textures.ContainsKey(filename))
 				Textures.Add(filename, t);
 		}
 
-		public static Sprite GetTexture(string filename, IntPtr renderer, Vector2<int> frames)
+		public static Sprite GetTexture(string filename, ref IntPtr renderer, Vector2<int> frames)
 		{
 			if (Textures.ContainsKey(filename))
 				return Textures[filename];
 			else
-				return LoadTexture(renderer, filename, frames);
+				return LoadTexture(ref renderer, filename, frames);
 		}
 
 		public static void UnloadTextures(bool clear_cache = false)

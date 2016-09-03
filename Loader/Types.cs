@@ -49,11 +49,12 @@ namespace RPGEngine
 
 	public enum TileType
 	{
+		
 		Clear,
 		Grass,
 		Water,
-		Road
-
+		Road,
+		None
 	}
 
 	public enum Worldtype

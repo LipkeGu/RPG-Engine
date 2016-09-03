@@ -10,9 +10,11 @@ namespace RPGEngine
 	{
 		IniFile inifile;
 		Vector2<float> camera;
-		
+		Worldtype worldtype;
+
 		string tileset_directory;
 		string name;
+		bool debug;
 
 		public Dictionary<string, Layer> Layers;
 
@@ -24,14 +26,17 @@ namespace RPGEngine
 		public delegate void MapCreatedEventHandler(object source, EventArgs args);
 		public event MapCreatedEventHandler Mapcreated;
 
-		public Map(string name, string fileName, string parentDir)
+		public Map(string name, string fileName, string parentDir, Worldtype worldtype = Worldtype.Normal)
 		{
 			this.inifile = new IniFile(fileName);
 			this.tileset_directory = parentDir;
 			this.name = name;
+
+			this.worldtype = worldtype;
+			this.debug = this.worldtype == Worldtype.Debug ? true : false; 
 		}
 
-		public void Load(IntPtr renderer)
+		public void Load(ref IntPtr renderer)
 		{
 			var num_layers = uint.Parse(this.inifile.WertLesen("Info", "Layers"));
 			var tileset_file = Path.Combine(this.tileset_directory, "{0}.png".F(this.inifile.WertLesen("Info", "Tileset")));
@@ -39,7 +44,7 @@ namespace RPGEngine
 			if (!File.Exists(tileset_file))
 				throw new FileNotFoundException("Tileset not found: {0}".F(tileset_file));
 
-			var tileset = Engine.GetTexture(tileset_file, renderer, new Vector2<int>(20, 20));
+			var tileset = Engine.GetTexture(tileset_file, ref renderer, new Vector2<int>(20, 20));
 			var groups = new Dictionary<string, List<Vector2<uint>>>();
 
 			var map_w = uint.Parse(this.inifile.WertLesen("Info", "Width"));
@@ -110,7 +115,7 @@ namespace RPGEngine
 			for (var l = uint.MinValue; l < num_layers; l++)
 			{
 				layertype = (LayerType)int.Parse(inifile.WertLesen("Layer{0}".F(l), "Type"));
-				image = inifile.WertLesen("Layer{0}".F(l), "Image");
+				image = inifile.WertLesen("Layer{0}".F(l), "Image").Split(',')[0];
 				var tiles = new Dictionary<string, Tile>();
 				Game.Print(LogType.Debug, this.GetType().ToString(), "Creating Tiles...");
 
@@ -121,9 +126,16 @@ namespace RPGEngine
 						{
 							image = "clear";
 
+							if (!groups.ContainsKey(image))
+								throw new Exception("Undefined definition '{0}'".F(image));
+
 							var imageoffset = new Vector2<uint>(0, 0);
-							if (tileentry.Length > 3)
-								tiletype = (TileType)int.Parse(tileentry[4]);
+
+							if (layertype == LayerType.Collision)
+								tiletype = TileType.None;
+							else
+								if (tileentry.Length > 3)
+									tiletype = (TileType)int.Parse(tileentry[4]);
 
 							imageoffset = groups[image][rand.Next(0, groups[image].Count - 1)];
 
@@ -147,6 +159,8 @@ namespace RPGEngine
 									tiles.Add("{0}-{1}-{2}".F(targetX, targetY, layertype), tile);
 								}
 							}
+							else
+								throw new IndexOutOfRangeException("Malformed definition for Tile \"{0}-{1}-{2}\"".F(targetX, targetY, layertype));
 						}
 				#endregion
 
@@ -180,8 +194,12 @@ namespace RPGEngine
 						}
 					}
 
-					if (tileentry.Length > 3)
-						tiletype = (TileType)int.Parse(tileentry[4]);
+					if (layertype == LayerType.Collision)
+						tiletype = TileType.None;
+					else
+						if (tileentry.Length > 3)
+							tiletype = (TileType)int.Parse(tileentry[4]);
+
 
 
 					if (imgX <= tileset.Width && imgY <= tileset.Height)
@@ -223,29 +241,29 @@ namespace RPGEngine
 				layer.Update();
 		}
 
-		public void Render(ref IntPtr renderer, Vector2<float> camera, ref IntPtr screen_surface, Vector2<int> screensize, ref Player player, Worldtype type = Worldtype.Normal)
+		public void Render(ref IntPtr renderer, Vector2<float> camera, ref IntPtr screen_surface, Vector2<int> screensize, ref Player player)
 		{
+			this.worldtype = (this.debug ? Worldtype.Debug : Worldtype.Normal);
 			foreach (var layer in this.Layers.Values)
 				if (layer.LayerType == LayerType.Ground || layer.LayerType == LayerType.Ground_Overlay)
-					layer.Render(ref renderer, ref screen_surface, camera, screensize, type);
+					layer.Render(ref renderer, ref screen_surface, camera, screensize, this.worldtype);
 
 			foreach (var layer in this.Layers.Values)
 				if (layer.LayerType == LayerType.Collision)
-					layer.Render(ref renderer, ref screen_surface, camera, screensize, type);
+					layer.Render(ref renderer, ref screen_surface, camera, screensize, this.worldtype);
 
-			if (type != Worldtype.Editor)
-				player.Render(screensize);
+			player.Render(ref renderer, screensize);
 
 			foreach (var layer in this.Layers.Values)
 				if (layer.LayerType == LayerType.PlayerOverlay)
-					layer.Render(ref renderer, ref screen_surface, camera, screensize, type);
+					layer.Render(ref renderer, ref screen_surface, camera, screensize, this.worldtype);
 		}
 
-		public void Events(SDL.SDL_Event e)
+		public void Events(ref SDL.SDL_Event e)
 		{
 			foreach (var layer in this.Layers)
 				if (layer.Value.LayerType != LayerType.Ground)
-					layer.Value.Events(e);
+					layer.Value.Events(ref e);
 		}
 
 		public void Close()
@@ -264,6 +282,12 @@ namespace RPGEngine
 		protected virtual void OnMapCreated()
 		{
 			this.Mapcreated?.Invoke(this, EventArgs.Empty);
+		}
+
+		public bool DebugMode
+		{
+			get { return this.debug; }
+			set { this.debug = value; }
 		}
 	}
 }

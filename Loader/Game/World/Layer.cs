@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SDL2;
+using System;
 using System.Collections.Generic;
 
 namespace RPGEngine
@@ -24,10 +25,10 @@ namespace RPGEngine
 				tile.Update();
 		}
 
-		public void Events(SDL2.SDL.SDL_Event e)
+		public void Events(ref SDL.SDL_Event e)
 		{
 			foreach (var tile in this.Tiles.Values)
-				tile.Events(e);
+				tile.Events(ref e);
 		}
 
 		public void Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, 

@@ -14,9 +14,6 @@ namespace RPGEngine
 		public event AudioInitErrorEventHandler AudioInitError;
 
 		int errnum = -1;
-		uint audio_len;
-		ushort audio_pos;
-
 		uint audioDevice = uint.MaxValue;
 		string deviceName;
 
@@ -57,8 +54,6 @@ namespace RPGEngine
 
 		void Audiocallback(IntPtr userdata, IntPtr stream, int len)
 		{
-			if (audio_len == uint.MinValue)
-				return;
 		}
 
 		public void Close()

@@ -6,22 +6,18 @@ namespace RPGEngine
 {
 	public class Tile
 	{
-		public SDL_Rect TargetRect, SourceRect, offset;
+		SDL_Rect TargetRect, SourceRect, collision_overlay, offset;
 		Vector2<float> camera;
 
 		Sprite image;
 
-		bool debug;
-		bool passable;
+		bool debug, passable;
+
 		RectangleF collisionRect, movetypeRect;
-		SDL_Rect collision_overlay;
 		TileType tiletype;
 		public MovingType movingtype = MovingType.Walk;
 
-		public int walk_speed;
-		public int dive_speed;
-		public int bike_speed;
-
+		public int walk_speed, dive_speed, bike_speed;
 		LayerType layertype;
 
 		public Tile(ref Sprite image, Vector2<uint> source, Vector2<uint> size, Vector2<uint> target, 
@@ -69,11 +65,12 @@ namespace RPGEngine
 					this.bike_speed = 6;
 					this.dive_speed = 0;
 					break;
+				case TileType.None:
 				default:
 					this.movingtype = MovingType.Walk;
-					this.walk_speed = 0;
-					this.bike_speed = 0;
-					this.dive_speed = 0;
+					this.walk_speed = 1;
+					this.bike_speed = 1;
+					this.dive_speed = 1;
 					break;
 			}
 
@@ -116,15 +113,8 @@ namespace RPGEngine
 		{
 		}
 
-		public void Events(SDL_Event e)
+		public void Events(ref SDL_Event e)
 		{
-			if (e.key.keysym.sym == SDL_Keycode.SDLK_F8)
-			{
-				if (this.debug)
-					this.debug = false;
-				else
-					this.debug = true;
-			}
 		}
 
 		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
@@ -144,9 +134,23 @@ namespace RPGEngine
 
 			SDL_RenderCopy(renderer, this.image.Image, ref this.SourceRect, ref this.offset);
 			
-			if (this.layertype == LayerType.Collision && this.debug)
-				Video.DrawRect(renderer, (int)this.collisionRect.X, (int)this.collisionRect.Y, 
-					(int)this.collisionRect.Width, (int)this.collisionRect.Height, Color.Red);
+			if (type == Worldtype.Debug)
+			{
+				if (this.tiletype == TileType.None)
+					Video.DrawRect(renderer, (int)this.offset.x, (int)this.offset.y, (int)this.offset.w, (int)this.offset.h, Color.Black);
+
+				if (this.tiletype == TileType.Water)
+					Video.DrawRect(renderer, (int)this.offset.x, (int)this.offset.y, (int)this.offset.w, (int)this.offset.h, Color.DarkBlue);
+
+				if (this.tiletype == TileType.Road)
+					Video.DrawRect(renderer, (int)this.offset.x, (int)this.offset.y, (int)this.offset.w, (int)this.offset.h, Color.DarkGray);
+
+				if (this.tiletype == TileType.Grass)
+					Video.DrawRect(renderer, (int)this.offset.x, (int)this.offset.y, (int)this.offset.w, (int)this.offset.h, Color.DarkGreen);
+
+				if (this.tiletype == TileType.Clear)
+					Video.DrawRect(renderer, (int)this.offset.x, (int)this.offset.y, (int)this.offset.w, (int)this.offset.h, Color.LightGreen);
+			}
 
 			return 0;
 		}
@@ -163,6 +167,12 @@ namespace RPGEngine
 		public RectangleF MovingBox
 		{
 			get { return this.movetypeRect; }
+		}
+
+		public bool DebugMode
+		{
+			get { return this.debug; }
+			set { this.debug = value; }
 		}
 	}
 }

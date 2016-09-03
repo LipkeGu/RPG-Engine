@@ -12,8 +12,7 @@ namespace RPGEngine
 
 		IniFile player_file;
 		MovingType movingtype;
-		IntPtr renderer;
-
+		
 		RectangleF collisionRect, movetypeRect;
 		SDL.SDL_Rect collision_overlay;
 
@@ -30,12 +29,11 @@ namespace RPGEngine
 
 		Vector2<int> frame;
 
-		public Player(IntPtr renderer, string filename, Vector2<float> camera, Vector2<float> startPos)
+		public Player(ref IntPtr renderer, string filename, Vector2<float> camera, Vector2<float> startPos)
 		{
 			this.player_file = new IniFile(filename);
 			this.name = player_file.WertLesen("Info", "Name");
 			this.movingtype = MovingType.Walk;
-			this.renderer = renderer;
 			this.debug = false;
 
 			if (camera.X == 0 && camera.Y == 0)
@@ -45,7 +43,7 @@ namespace RPGEngine
 			
 			var frames = this.player_file.WertLesen("Info", "Frames").Split(',');
 			this.texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", "Walk")), 
-				renderer, new Vector2<int>(int.Parse(frames[0]), int.Parse(frames[1])));
+				ref renderer, new Vector2<int>(int.Parse(frames[0]), int.Parse(frames[1])));
 
 			this.frame = new Vector2<int>(0,0);
 			this.Position = startPos;
@@ -86,7 +84,7 @@ namespace RPGEngine
 			return Direction.None;
 		}
 		
-		public void Events(SDL.SDL_Event e, ref Dictionary<string, Layer> layers)
+		public void Events(ref SDL.SDL_Event e, ref Dictionary<string, Layer> layers)
 		{
 			var col_layer = layers["Layer2"];
 			var ground_layer = layers["Layer0"];
@@ -219,14 +217,6 @@ namespace RPGEngine
 							this.Position.X = 0;
 					}
 
-					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F8)
-					{
-						if (this.debug)
-							this.debug = false;
-						else
-							this.debug = true;
-					}
-
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_RIGHT || e.key.keysym.sym == SDL.SDL_Keycode.SDLK_LEFT ||
 					e.key.keysym.sym == SDL.SDL_Keycode.SDLK_UP || e.key.keysym.sym == SDL.SDL_Keycode.SDLK_DOWN)
 					{
@@ -285,15 +275,15 @@ namespace RPGEngine
 			#endregion
 		}
 
-		public void Update()
+		public void Update(ref IntPtr renderer)
 		{
 			texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", 
-				this.movingtype.ToString())), this.renderer, new Vector2<int>(this.texture.Frames.X, this.texture.Frames.X));
+				this.movingtype.ToString())), ref renderer, new Vector2<int>(this.texture.Frames.X, this.texture.Frames.X));
 
 			this.texture.Update();
 		}
 
-		public void Render(Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public void Render(ref IntPtr renderer, Vector2<int> screensize)
 		{
 			this.collisionRect.Width = 28;
 			this.collisionRect.Height = 28;
@@ -312,11 +302,13 @@ namespace RPGEngine
 			this.movetypeRect.X = this.texture.TargetRect.x;
 			this.movetypeRect.Y = this.texture.TargetRect.y;
 			
-			this.texture.Render();
+			this.texture.Render(ref renderer);
 
 			if (debug)
 			{
-				Video.DrawRect(renderer, (int)collisionRect.X, (int)collisionRect.Y, (int)collisionRect.Width, (int)collisionRect.Height, Color.Red);
+				Video.DrawRect(renderer, (int)collisionRect.X, (int)collisionRect.Y, 
+					(int)collisionRect.Width, (int)collisionRect.Height, Color.Red);
+
 				this.collision_overlay.x = (int)movetypeRect.X;
 				this.collision_overlay.y = (int)movetypeRect.Y;
 			}
@@ -327,11 +319,13 @@ namespace RPGEngine
 			this.texture.Close();
 		}
 
-		public void GetTileType(ref Layer layer, out TileType tiletype, out int walk_speed, out int bike_speed, out int dive_speed, out MovingType movingtype)
+		public void GetTileType(ref Layer layer, out TileType tiletype, out int walk_speed, 
+			out int bike_speed, out int dive_speed, out MovingType movingtype)
 		{
 			var w_speed = 1;
 			var b_speed = 1;
 			var d_speed = 1;
+
 			var move_type = MovingType.Walk;
 			var ttype = TileType.Clear;
 
@@ -351,6 +345,12 @@ namespace RPGEngine
 			walk_speed = w_speed;
 			bike_speed = b_speed;
 			dive_speed = d_speed;
+		}
+
+		public bool DebugMode
+		{
+			get { return this.debug; }
+			set { this.debug = value; }
 		}
 	}
 }

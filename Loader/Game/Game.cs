@@ -15,7 +15,7 @@ namespace RPGEngine
 		World world;
 		SDL_Event events;
 
-		public Game(Video video, Text text, Audio audio, Settings config)
+		public Game(ref Video video, ref Text text, ref Audio audio, ref Settings config)
 		{
 			this.video = video;
 			this.text = text;
@@ -34,7 +34,7 @@ namespace RPGEngine
 						break;
 					case SDL_EventType.SDL_KEYDOWN:
 					case SDL_EventType.SDL_KEYUP:
-						this.world.Events(this.events);
+						this.world.Events(ref this.events);
 						break;
 					default:
 						break;
@@ -44,20 +44,13 @@ namespace RPGEngine
 
 		public int Start()
 		{
-			this.world = new World(
-				this.config.Player.Name,
-				this.config.Engine.MapDirectory,
-				this.config.Engine.ActorDirectory,
-				this.video.Renderer,
-				this.WindowSize(),
-				this.config.Engine.Worldmode);
-
+			this.world = new World(this.config.Player.Name, this.config.Engine.MapDirectory, this.config.Engine.ActorDirectory, this.video.Renderer, this.WindowSize());
 			return world != null ? 0 : -1;
 		}
 
 		public void Update()
 		{
-			this.world.Update();
+			this.world.Update(this.video.Renderer);
 		}
 
 		public void Render(IntPtr renderer)

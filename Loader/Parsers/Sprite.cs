@@ -7,33 +7,26 @@ namespace RPGEngine
 	public class Sprite
 	{
 		IntPtr image;
-		IntPtr renderer;
-
-		int width;
-		int height;
-
-		Vector2<int> frames;
-
-		Vector2<int> frameSize;
-
-		public SDL.SDL_Rect SourceRect;
-		public SDL.SDL_Rect TargetRect;
-
-		uint format;
-		int access;
+		int width, height;
+		
+		Vector2<int> frames, frameSize;
+		
+		public SDL.SDL_Rect SourceRect, TargetRect;
 
 		string filename;
 
-		public Sprite(string filename, IntPtr renderer, Vector2<int> frames)
+		public Sprite(string filename, ref IntPtr renderer, Vector2<int> frames)
 		{
 			if (!File.Exists(filename))
 				throw new FileNotFoundException(filename);
 
-			this.filename = filename;
-			this.renderer = renderer;
+			var format = uint.MinValue;
+			var access = 0;
 
-			this.image = SDL_image.IMG_LoadTexture(this.renderer, this.filename);
-			SDL.SDL_QueryTexture(this.image, out this.format, out this.access, out this.width, out this.height);
+			this.filename = filename;
+			
+			this.image = SDL_image.IMG_LoadTexture(renderer, this.filename);
+			SDL.SDL_QueryTexture(this.image, out format, out access, out this.width, out this.height);
 
 			this.frames = frames;
 			this.frameSize = new Vector2<int>((this.width / frames.X), (this.height / frames.Y));
@@ -46,12 +39,6 @@ namespace RPGEngine
 
 			Game.Print(LogType.Debug, this.GetType().ToString(), "Using Texture '{0}' (W*H: {1}*{3} | Frames: {2}*{4})"
 				.F(this.filename, this.width, this.frames.X, this.height, this.frames.Y));
-		}
-
-		public IntPtr Renderer
-		{
-			set { this.renderer = value; }
-			get { return this.renderer; }
 		}
 
 		public Vector2<int> FrameSize
@@ -91,9 +78,9 @@ namespace RPGEngine
 			get { return this.image; }
 		}
 
-		public void Render()
+		public void Render(ref IntPtr renderer)
 		{
-			SDL.SDL_RenderCopy(this.renderer, this.image, ref this.SourceRect, ref this.TargetRect);
+			SDL.SDL_RenderCopy(renderer, this.image, ref this.SourceRect, ref this.TargetRect);
 		}
 
 		public void Update()

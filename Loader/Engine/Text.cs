@@ -7,7 +7,6 @@ namespace RPGEngine
 {
 	public class Text
 	{
-		IntPtr renderer;
 		IntPtr font;
 
 		SDL.SDL_Rect target, source;
@@ -29,8 +28,6 @@ namespace RPGEngine
 
 			if (renderer == IntPtr.Zero)
 				Game.Print(LogType.Error, this.GetType().ToString(), "Got NULL Renderer");
-
-			this.renderer = renderer;
 
 			if (!File.Exists(fontfile))
 				Game.Print(LogType.Error, this.GetType().ToString(), "File not found: {0}".F(fontfile));
@@ -103,54 +100,46 @@ namespace RPGEngine
 
 		}
 
-		public void Render(IntPtr renderer)
+		public void Render(ref IntPtr renderer)
 		{
-			this.renderer = renderer;
-			if (this.renderer != IntPtr.Zero)
+			switch (this.mode)
 			{
-				switch (this.mode)
-				{
-					case TextMode.Solid:
-						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1));
-						break;
-					case TextMode.Blended:
-						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1));
+				case TextMode.Solid:
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), ref renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1));
 					break;
-					case TextMode.Wrapped:
-						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1));
-						break;
-					case TextMode.Shaded:
-						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1,1));
-						break;
-					default:
-						break;
+				case TextMode.Blended:
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), ref renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1));
+					break;
+				case TextMode.Wrapped:
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), ref renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1));
+					break;
+				case TextMode.Shaded:
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), ref renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1,1));
+					break;
+				default:
+					break;
 				}
 				
-				this.texture = Engine.GetTexture(this.alias, renderer, new Vector2<int>(1, 1));
+				this.texture = Engine.GetTexture(this.alias, ref renderer, new Vector2<int>(1, 1));
 				SDL.SDL_RenderCopy(renderer, this.texture.Image, ref this.source, ref this.target);
-			}
 		}
 
-		public void print(string text, string alias, TextMode mode, int x = 20, int y = 20)
+		public void print(ref IntPtr renderer, string text, string alias, TextMode mode, int x = 20, int y = 20)
 		{
 			this.mode = mode;
 			this.text = text;
 
-			if (this.text.Length > 0)
-				if (this.renderer != IntPtr.Zero)
-				{
-					this.texture = Engine.GetTexture(alias, renderer, new Vector2<int>(1,1));
-					if (this.texture.Image == IntPtr.Zero)
-						Game.Print(LogType.Error, this.GetType().ToString(), "Text->Print(): {0}".F(SDL.SDL_GetError()));
-					else
-					{
-						this.target.x = x;
-						this.target.y = y;
+			this.texture = Engine.GetTexture(alias, ref renderer, new Vector2<int>(1,1));
+			if (this.texture.Image == IntPtr.Zero)
+				Game.Print(LogType.Error, this.GetType().ToString(), "Text->Print(): {0}".F(SDL.SDL_GetError()));
+			else
+			{
+				this.target.x = x;
+				this.target.y = y;
 
-						if (SDL.SDL_QueryTexture(this.texture.Image, out this.format, out this.access, out this.target.w, out this.target.h) != 0)
-							Game.Print(LogType.Error, this.GetType().ToString(), SDL.SDL_GetError());
-					}
-				}
+				if (SDL.SDL_QueryTexture(this.texture.Image, out this.format, out this.access, out this.target.w, out this.target.h) != 0)
+					Game.Print(LogType.Error, this.GetType().ToString(), SDL.SDL_GetError());
+			}
 		}
 
 		public void Events(SDL.SDL_Event e)
