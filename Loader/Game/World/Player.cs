@@ -14,7 +14,7 @@ namespace RPGEngine
 		MovingType movingtype;
 		IntPtr renderer;
 
-		RectangleF collisionRect;
+		RectangleF collisionRect, movetypeRect;
 		SDL.SDL_Rect collision_overlay;
 
 		Sprite texture;
@@ -51,8 +51,8 @@ namespace RPGEngine
 			this.Position = startPos;
 
 			this.texture.FrameSize = this.texture.Frames;
-			this.collisionRect.Width = this.texture.FrameSize.X;
-			this.collisionRect.Height = this.texture.FrameSize.Y;
+			this.movetypeRect.Width = this.collisionRect.Width = this.texture.FrameSize.X;
+			this.movetypeRect.Height = this.collisionRect.Height = this.texture.FrameSize.Y;
 
 			this.collision_overlay.w = (int)this.collisionRect.Width;
 			this.collision_overlay.h = (int)this.collisionRect.Height;
@@ -67,18 +67,18 @@ namespace RPGEngine
 
 			foreach (var t in layer.Tiles.Values)
 			{
-				if (layer.LayerType == LayerType.Collision && t.collisionRect.IntersectsWith(collisionRect))
+				if (layer.LayerType == LayerType.Collision && t.CollisionBox.IntersectsWith(collisionRect))
 				{
-					if (p_top < t.collisionRect.Bottom + 3)
+					if (p_top <= t.CollisionBox.Bottom)
 						return Direction.Up;
 
-					if (p_bottom > t.collisionRect.Top - 3)
+					if (p_bottom >= t.CollisionBox.Top)
 						return Direction.Down;
 
-					if (p_left > (t.collisionRect.Right + 3))
+					if (p_left >= t.CollisionBox.Right)
 						return Direction.Left;
 
-					if (p_right < (t.collisionRect.Left - 3))
+					if (p_right <= t.CollisionBox.Left)
 						return Direction.Right;
 				}
 			}
@@ -94,7 +94,7 @@ namespace RPGEngine
 			var direction = ResolveCollision(ref col_layer);
 			var tiletype = TileType.Clear;
 
-			this.GetTileType(ref ground_layer, out tiletype, out speed_walk, out speed_bike, out speed_dive);
+			this.GetTileType(ref ground_layer, out tiletype, out speed_walk, out speed_bike, out speed_dive, out movingtype);
 			var movingspeed = 0;
 
 			switch (this.movingtype)
@@ -197,7 +197,7 @@ namespace RPGEngine
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_RIGHT)
 					{
 						frame.Y = 2;
-						if (this.Position.X >= 0 && this.Position.X < float.MaxValue)
+						if (this.Position.X > -1 && this.Position.X < float.MaxValue)
 						{
 							switch (direction)
 							{
@@ -217,24 +217,6 @@ namespace RPGEngine
 						}
 						else
 							this.Position.X = 0;
-					}
-
-					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F4)
-					{
-						switch (this.movingtype)
-						{
-							case MovingType.Walk:
-								this.movingtype = MovingType.Bike;
-								break;
-							case MovingType.Bike:
-								this.movingtype = MovingType.Dive;
-								break;
-							case MovingType.Dive:
-								this.movingtype = MovingType.Walk;
-								break;
-							default:
-								break;
-						}
 					}
 
 					if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F8)
@@ -291,8 +273,8 @@ namespace RPGEngine
 				this.texture.SourceRect.x = (frame.X * this.texture.FrameSize.X);
 				this.texture.SourceRect.y = (frame.Y * this.texture.FrameSize.Y);
 
-				this.collisionRect.X = this.texture.TargetRect.x = (int)this.Position.X;
-				this.collisionRect.Y = this.texture.TargetRect.y = (int)this.Position.Y;
+				this.movetypeRect.X = this.collisionRect.X = this.texture.TargetRect.x = (int)this.Position.X;
+				this.movetypeRect.X = this.collisionRect.Y = this.texture.TargetRect.y = (int)this.Position.Y;
 
 				this.Camera.X = (this.Position.X * 2);
 				this.Camera.Y = (this.Position.Y * 2);
@@ -305,25 +287,38 @@ namespace RPGEngine
 
 		public void Update()
 		{
-			texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", this.movingtype.ToString())), this.renderer, new Vector2<int>(4, 4));
+			texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures", 
+				this.movingtype.ToString())), this.renderer, new Vector2<int>(this.texture.Frames.X, this.texture.Frames.X));
+
 			this.texture.Update();
 		}
 
 		public void Render(Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
-			this.collisionRect.Width = this.texture.TargetRect.w;
-			this.collisionRect.Height = this.texture.TargetRect.h;
+			this.collisionRect.Width = 28;
+			this.collisionRect.Height = 28;
 
-			this.collisionRect.X = this.texture.TargetRect.x = (screensize.X / 2) - (this.texture.FrameSize.X / 2);
-			this.collisionRect.Y = this.texture.TargetRect.y = (screensize.Y / 2) - (this.texture.FrameSize.Y / 2);
+			this.movetypeRect.Width = 32;
+			this.movetypeRect.Height = 32;
 
+
+			this.texture.TargetRect.x = (screensize.X / 2) - (this.texture.FrameSize.X / 2);
+			this.texture.TargetRect.y = (screensize.Y / 2) - (this.texture.FrameSize.Y / 2);
+
+
+			this.collisionRect.X = 10 + this.texture.TargetRect.x;
+			this.collisionRect.Y = 28 + this.texture.TargetRect.y;
+
+			this.movetypeRect.X = this.texture.TargetRect.x;
+			this.movetypeRect.Y = this.texture.TargetRect.y;
+			
 			this.texture.Render();
 
 			if (debug)
 			{
 				Video.DrawRect(renderer, (int)collisionRect.X, (int)collisionRect.Y, (int)collisionRect.Width, (int)collisionRect.Height, Color.Red);
-				this.collision_overlay.x = (int)collisionRect.X;
-				this.collision_overlay.y = (int)collisionRect.Y;
+				this.collision_overlay.x = (int)movetypeRect.X;
+				this.collision_overlay.y = (int)movetypeRect.Y;
 			}
 		}
 
@@ -332,26 +327,27 @@ namespace RPGEngine
 			this.texture.Close();
 		}
 
-		public void GetTileType(ref Layer layer, out TileType tiletype, out int walk_speed, out int bike_speed, out int dive_speed)
+		public void GetTileType(ref Layer layer, out TileType tiletype, out int walk_speed, out int bike_speed, out int dive_speed, out MovingType movingtype)
 		{
-			var w_speed = 0;
-			var b_speed = 0;
-			var d_speed = 0;
+			var w_speed = 1;
+			var b_speed = 1;
+			var d_speed = 1;
+			var move_type = MovingType.Walk;
 			var ttype = TileType.Clear;
 
 			foreach (var tile in layer.Tiles.Values)
-				if (this.collisionRect.IntersectsWith(tile.collisionRect) && tile.Type == LayerType.Ground)
+				if (this.movetypeRect.IntersectsWith(tile.MovingBox) && tile.Type == LayerType.Ground)
 				{
 					ttype = tile.Tiletype;
 					w_speed = tile.walk_speed;
 					b_speed = tile.bike_speed;
 					d_speed = tile.dive_speed;
-
+					move_type = tile.movingtype;
 					break;
 				}
 
 			tiletype = ttype;
-
+			movingtype = move_type;
 			walk_speed = w_speed;
 			bike_speed = b_speed;
 			dive_speed = d_speed;

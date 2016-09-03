@@ -11,6 +11,7 @@ namespace RPGEngine
 
 		int width;
 		int height;
+
 		Vector2<int> frames;
 
 		Vector2<int> frameSize;
@@ -29,21 +30,22 @@ namespace RPGEngine
 				throw new FileNotFoundException(filename);
 
 			this.filename = filename;
-			
-
 			this.renderer = renderer;
 
 			this.image = SDL_image.IMG_LoadTexture(this.renderer, this.filename);
-			SDL.SDL_QueryTexture(this.image, out format, out access, out width, out height);
+			SDL.SDL_QueryTexture(this.image, out this.format, out this.access, out this.width, out this.height);
 
 			this.frames = frames;
-			this.frameSize = new Vector2<int>(this.width / frames.X, this.height / frames.Y);
+			this.frameSize = new Vector2<int>((this.width / frames.X), (this.height / frames.Y));
 
 			this.TargetRect.h = this.SourceRect.h = (int)this.frameSize.Y;
 			this.TargetRect.w = this.SourceRect.w = (int)this.frameSize.X;
 
 			this.TargetRect.x = this.SourceRect.x = 0 * (int)this.frameSize.X;
 			this.TargetRect.y = this.SourceRect.y = 0 * (int)this.frameSize.Y;
+
+			Game.Print(LogType.Debug, this.GetType().ToString(), "Using Texture '{0}' (W*H: {1}*{3} | Frames: {2}*{4})"
+				.F(this.filename, this.width, this.frames.X, this.height, this.frames.Y));
 		}
 
 		public IntPtr Renderer
@@ -96,6 +98,8 @@ namespace RPGEngine
 
 		public void Update()
 		{
+			this.frameSize = new Vector2<int>((this.width / frames.X), (this.height / frames.Y));
+
 			this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
 			this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
 		}

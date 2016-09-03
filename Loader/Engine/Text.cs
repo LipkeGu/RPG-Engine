@@ -9,20 +9,20 @@ namespace RPGEngine
 	{
 		IntPtr renderer;
 		IntPtr font;
-		IntPtr surface;
 
 		SDL.SDL_Rect target, source;
 		SDL.SDL_Color textcolor, backcolor;
 
-		IntPtr texture;
+		Sprite texture;
 		string text;
 		uint format;
 		TextMode mode;
 
+		string alias;
 		string fontfile;
 		int fontsize, access;
 
-		public Text(IntPtr renderer, string fontfile, int fontsize, Color fontcolor, Color backcolor)
+		public Text(IntPtr renderer, string fontfile, string alias, int fontsize, Color fontcolor, Color backcolor)
 		{
 			if (SDL_ttf.TTF_Init() != 0)
 				Game.Print(LogType.Error, this.GetType().ToString(), "TTF_Init(): {0}".F(SDL.SDL_GetError()));
@@ -36,8 +36,10 @@ namespace RPGEngine
 				Game.Print(LogType.Error, this.GetType().ToString(), "File not found: {0}".F(fontfile));
 
 			this.fontfile = fontfile;
+			this.alias = alias;
+
 			this.fontsize = fontsize;
-this.mode = TextMode.Solid;
+			this.mode = TextMode.Solid;
 
 
 			this.text = string.Empty;
@@ -59,11 +61,16 @@ this.mode = TextMode.Solid;
 			this.source = this.target;
 		}
 
+		public void Init(object obj)
+		{
+
+		}
+
 		/// <summary>
 		///	Returns the current Font 
 		/// </summary>
 		public IntPtr Font { get { return this.font; } }
-		public IntPtr Texture { get { return this.texture; } }
+		public Sprite Texture { get { return this.texture; } }
 
 		public void OpenFont(string filename, int size)
 		{
@@ -99,65 +106,48 @@ this.mode = TextMode.Solid;
 		public void Render(IntPtr renderer)
 		{
 			this.renderer = renderer;
-
-			if (this.surface != IntPtr.Zero)
-				SDL.SDL_FreeSurface(this.surface);
-
-			if (this.texture != IntPtr.Zero)
-				SDL.SDL_DestroyTexture(this.texture);
-
 			if (this.renderer != IntPtr.Zero)
 			{
 				switch (this.mode)
 				{
 					case TextMode.Solid:
-						this.surface = SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor);
+						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1));
 						break;
 					case TextMode.Blended:
-						this.surface = SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor);
-						break;
+						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1));
+					break;
 					case TextMode.Wrapped:
-						this.surface = SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180);
+						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1));
 						break;
 					case TextMode.Shaded:
-						this.surface = SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor);
+						Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1,1));
 						break;
 					default:
 						break;
 				}
-
-				if (this.surface != IntPtr.Zero)
-				{
-					this.texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.surface);
-					if (this.texture != IntPtr.Zero)
-					{
-						if (SDL.SDL_RenderCopy(this.renderer, this.texture, ref this.source, ref this.target) != 0)
-							Game.Print(LogType.Error, this.GetType().ToString(), "SDL_RenderCopy(): {0}".F(SDL.SDL_GetError()));
-
-						SDL.SDL_DestroyTexture(this.texture);
-						SDL.SDL_FreeSurface(this.surface);
-					}
-				}
+				
+				this.texture = Engine.GetTexture(this.alias, renderer, new Vector2<int>(1, 1));
+				SDL.SDL_RenderCopy(renderer, this.texture.Image, ref this.source, ref this.target);
 			}
 		}
 
-		public void print(string text, TextMode mode, int x = 20, int y = 20)
+		public void print(string text, string alias, TextMode mode, int x = 20, int y = 20)
 		{
 			this.mode = mode;
 			this.text = text;
 
 			if (this.text.Length > 0)
-				if (this.renderer != IntPtr.Zero && this.surface != IntPtr.Zero)
+				if (this.renderer != IntPtr.Zero)
 				{
-					this.texture = SDL.SDL_CreateTextureFromSurface(this.renderer, this.surface);
-					if (this.texture == IntPtr.Zero)
-						Game.Print(LogType.Error, this.GetType().ToString(), "SDL_CreateTextureFromSurface(): {0}".F(SDL.SDL_GetError()));
+					this.texture = Engine.GetTexture(alias, renderer, new Vector2<int>(1,1));
+					if (this.texture.Image == IntPtr.Zero)
+						Game.Print(LogType.Error, this.GetType().ToString(), "Text->Print(): {0}".F(SDL.SDL_GetError()));
 					else
 					{
 						this.target.x = x;
 						this.target.y = y;
 
-						if (SDL.SDL_QueryTexture(this.texture, out this.format, out this.access, out this.target.w, out this.target.h) != 0)
+						if (SDL.SDL_QueryTexture(this.texture.Image, out this.format, out this.access, out this.target.w, out this.target.h) != 0)
 							Game.Print(LogType.Error, this.GetType().ToString(), SDL.SDL_GetError());
 					}
 				}

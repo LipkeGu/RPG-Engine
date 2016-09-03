@@ -35,7 +35,7 @@ namespace RPGEngine
 				this.map = this.Maps["TestMap"];
 				this.map.Mapcreated += OnMapCreated;
 
-				this.map.Load();
+				this.map.Load(renderer);
 			}
 			
 			this.ReadActors(Playername, actorsDirectory, renderer);
@@ -60,17 +60,21 @@ namespace RPGEngine
 		public void ReadMaps(string path, IntPtr renderer)
 		{
 			var MapsDir = new DirectoryInfo(path);
+			var mapname = string.Empty;
 
 			foreach (var fil in MapsDir.GetFiles("*.map", SearchOption.AllDirectories))
 				if (fil.Length > 0 && fil.Exists)
-					this.Maps.Add(fil.Name.Split('.')[0], new Map(fil.FullName, renderer, "{0}/Data/Tileset/".F(Environment.CurrentDirectory)));
+				{
+					mapname = fil.Name.Split('.')[0];
+					this.Maps.Add(mapname, new Map(mapname, fil.FullName, "{0}/Data/Tileset/".F(Environment.CurrentDirectory)));
+				}
 
 			Game.Print(LogType.Debug, GetType().ToString(), "Found {0} Map(s)!".F(this.Maps.Count));
 		}
 
 		public void OnMapCreated(object source, EventArgs e)
 		{
-			Game.Print(LogType.Debug, GetType().ToString(), "Map loaded!");
+			Game.Print(LogType.Debug, GetType().ToString(), "Map '{0}' loaded!".F(this.map.Name));
 		}
 
 		public void Update()
@@ -91,7 +95,7 @@ namespace RPGEngine
 			this.player.Events(e, ref this.map.Layers);
 		}
 
-		public void Render(Vector2<int> screensize, IntPtr screen_surface)
+		public void Render(Vector2<int> screensize, IntPtr screen_surface, ref IntPtr renderer)
 		{
 			if (this.player == null || this.map == null)
 				return;
@@ -99,10 +103,7 @@ namespace RPGEngine
 			this.ScreenBsize = screensize;
 			this.camera = this.player.Camera;
 
-			this.map.Render(this.camera, ref screen_surface, this.ScreenBsize, ref this.player, this.worldtype);
-
-			if (this.player == null)
-				Console.WriteLine("blub");
+			this.map.Render(ref renderer, this.camera, ref screen_surface, this.ScreenBsize, ref this.player, this.worldtype);
 		}
 
 		public void Close()

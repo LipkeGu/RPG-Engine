@@ -13,9 +13,10 @@ namespace RPGEngine
 
 		bool debug;
 		bool passable;
-		public RectangleF collisionRect;
+		RectangleF collisionRect, movetypeRect;
 		SDL_Rect collision_overlay;
 		TileType tiletype;
+		public MovingType movingtype = MovingType.Walk;
 
 		public int walk_speed;
 		public int dive_speed;
@@ -23,7 +24,8 @@ namespace RPGEngine
 
 		LayerType layertype;
 
-		public Tile(ref Sprite image, Vector2<int> source, Vector2<int> size, Vector2<int> target, LayerType layertype, bool passable, Vector2<float> camera, TileType tiletype)
+		public Tile(ref Sprite image, Vector2<uint> source, Vector2<uint> size, Vector2<uint> target, 
+			LayerType layertype, bool passable, Vector2<float> camera, TileType tiletype)
 		{
 			this.camera = camera;
 			this.image = image;
@@ -32,38 +34,43 @@ namespace RPGEngine
 			this.layertype = layertype;
 			this.tiletype = tiletype;
 
-			this.TargetRect.x = target.X * size.Y;
-			this.TargetRect.y = target.Y * size.Y;
+			this.TargetRect.x = (int)(target.X * size.Y);
+			this.TargetRect.y = (int)(target.Y * size.Y);
 
-			this.SourceRect.x = source.X;
-			this.SourceRect.y = source.Y;
+			this.SourceRect.x = (int)source.X;
+			this.SourceRect.y = (int)source.Y;
 
-			this.offset.h = this.TargetRect.h = this.SourceRect.h = size.X;
-			this.offset.w = this.TargetRect.w = this.SourceRect.w = size.Y;
+			this.offset.h = this.TargetRect.h = this.SourceRect.h = (int)size.X;
+			this.offset.w = this.TargetRect.w = this.SourceRect.w = (int)size.Y;
 
 			switch (this.tiletype)
 			{
 				case TileType.Clear:
+					this.movingtype = MovingType.Walk;
 					this.walk_speed = 4;
 					this.bike_speed = 2;
 					this.dive_speed = 0;
 					break;
 				case TileType.Grass:
+					this.movingtype = MovingType.Walk;
 					this.walk_speed = 2;
 					this.bike_speed = 1;
 					this.dive_speed = 0;
 					break;
 				case TileType.Water:
-					this.walk_speed = 0;
+					this.movingtype = MovingType.Dive;
+					this.walk_speed = 1;
 					this.bike_speed = 0;
 					this.dive_speed = 2;
 					break;
 				case TileType.Road:
+					this.movingtype = MovingType.Bike;
 					this.walk_speed = 4;
 					this.bike_speed = 6;
 					this.dive_speed = 0;
 					break;
 				default:
+					this.movingtype = MovingType.Walk;
 					this.walk_speed = 0;
 					this.bike_speed = 0;
 					this.dive_speed = 0;
@@ -73,14 +80,20 @@ namespace RPGEngine
 
 			if (this.layertype == LayerType.Collision)
 			{
-				this.collisionRect.Height = this.offset.h;
-				this.collisionRect.Width = this.offset.w;
+				this.movetypeRect.Height = this.offset.h;
+				this.movetypeRect.Width = this.offset.w;
+
+				this.collisionRect.Height = (this.offset.h - 2);
+				this.collisionRect.Width = (this.offset.w - 2);
 
 				this.collision_overlay.h = (int)this.collisionRect.Height;
 				this.collision_overlay.w = (int)this.collisionRect.Width;
 
-				this.collisionRect.X = this.collision_overlay.x = this.offset.x;
-				this.collisionRect.Y = this.collision_overlay.y = this.offset.y;
+				this.movetypeRect.X = this.offset.x;
+				this.movetypeRect.Y = this.offset.y;
+
+				this.collisionRect.X = this.collision_overlay.x = (this.offset.x + 1);
+				this.collisionRect.Y = this.collision_overlay.y = (this.offset.y + 1);
 			}
 		}
 
@@ -114,11 +127,14 @@ namespace RPGEngine
 			}
 		}
 
-		public int Render(IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
 			this.camera = camera;
 			this.offset.x = (int)(TargetRect.x - this.camera.X + (screensize.X / 2));
 			this.offset.y = (int)(TargetRect.y - this.camera.Y + (screensize.Y / 2));
+
+			this.movetypeRect.X = this.offset.x;
+			this.movetypeRect.Y = this.offset.y;
 
 			this.collisionRect.X = this.collision_overlay.x = this.offset.x;
 			this.collisionRect.Y = this.collision_overlay.y = this.offset.y;
@@ -137,6 +153,16 @@ namespace RPGEngine
 
 		public void Close()
 		{
+		}
+
+		public RectangleF CollisionBox
+		{
+			get { return this.collisionRect; }
+		}
+
+		public RectangleF MovingBox
+		{
+			get { return this.movetypeRect; }
 		}
 	}
 }

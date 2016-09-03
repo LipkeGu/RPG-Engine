@@ -88,7 +88,8 @@ namespace RPGEngine
 	public enum LayerType
 	{
 		Ground,
-		Overlay,
-		Collision
+		Ground_Overlay,
+		Collision,
+		PlayerOverlay
 	}
 }

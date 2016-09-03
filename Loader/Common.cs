@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Threading;
 using System.Xml.Serialization;
@@ -16,17 +15,17 @@ namespace RPGEngine
 
 	public class SDLEventEventArgs : EventArgs
 	{
-		public SDL_Keycode key { get; set; }
+		public SDL_Keycode Key { get; set; }
 	}
 
 	public class Engine
 	{
-		bool paused;
-		bool started;
-
+		bool haveVideo, haveAudio, haveInput, paused, started, running;
+		
 		uint FPS;
 		uint starttime;
 		uint pausetime;
+
 		string[] args;
 
 		public Video Video;
@@ -41,10 +40,7 @@ namespace RPGEngine
 		public Settings Config;
 
 		[XmlIgnore]
-		public string SettingsFile;
 		XmlManager<Settings> XMLSettingsReader;
-
-		public bool haveVideo, haveAudio, haveInput, running;
 
 		public Engine(string[] args)
 		{
@@ -60,21 +56,11 @@ namespace RPGEngine
 			this.XMLSettingsReader = new XmlManager<Settings>();
 			this.haveVideo = this.running = false;
 
-			this.SettingsFile = Path.Combine(Environment.CurrentDirectory, "Data/Settings.xml");
-
-			if (!File.Exists(this.SettingsFile))
-				this.XMLSettingsReader.Save(this.SettingsFile, this.Config);
+			var settingsFile = Path.Combine(Environment.CurrentDirectory, "Data/Settings.xml");
+			if (File.Exists(settingsFile))
+				this.Config = this.XMLSettingsReader.Load(settingsFile);
 			else
-				try
-				{
-					this.Config = this.XMLSettingsReader.Load(this.SettingsFile);
-				}
-				catch (Exception e)
-				{
-					this.XMLSettingsReader.Save(this.SettingsFile, this.Config);
-					Game.Print(LogType.Error, GetType().ToString(), "Failed to open \"{0}\". Default values was written and used. Error: {1}".F(this.SettingsFile, e.Message));
-				}
-
+				this.XMLSettingsReader.Save(settingsFile, this.Config);
 
 			this.Video.VideoInitDone += OnVideoInitDone;
 			this.Video.VideoInitError += OnVideoInitError;
@@ -134,31 +120,23 @@ namespace RPGEngine
 			throw new Exception("{0}: {1}".F(e.Source, e.Message));
 		}
 
-		[STAThread]
-		public void OnVideoInitDone(object source, FinishEventArgs e)
+		private void OnVideoInitDone(object source, FinishEventArgs e)
 		{
 			this.haveVideo = true;
-
-			if (this.haveVideo)
+			if (this.haveVideo && this.Game.Start() == 0)
 			{
-				var fontfile = Path.Combine(this.Config.Engine.FontDirectory, this.Config.Engine.FontFile);
-				this.Text = new Text(this.Video.Renderer, fontfile, 12, Color.Black, Color.White);
-
-				if (this.Game.Start() == 0)
-				{
-					this.running = true;
+				this.running = true;
 					
-					while (this.running)
-					{
-						this.Game.Events(ref this.running);
-						this.Game.Update();
-						this.Game.Render(this.Video.Renderer);
-						this.regulate();
-					}
+				while (this.running)
+				{
+					this.Game.Events(ref this.running);
+					this.Game.Update();
+					this.Game.Render(this.Video.Renderer);
+					this.regulate();
 				}
-
-				this.Close();
 			}
+
+			this.Close();
 		}
 
 		public void Init()
@@ -201,7 +179,7 @@ namespace RPGEngine
 				return uint.MinValue;
 		}
 
-		public void pause()
+		public void Pause()
 		{
 			if (this.started && !this.paused)
 			{
@@ -210,7 +188,7 @@ namespace RPGEngine
 			}
 		}
 
-		public void start()
+		void start()
 		{
 			this.started = true;
 			this.paused = false;
@@ -219,7 +197,7 @@ namespace RPGEngine
 		}
 
 
-		void unpause()
+		public void Unpause()
 		{
 			if (this.paused)
 			{
@@ -229,20 +207,20 @@ namespace RPGEngine
 			}
 		}
 
-		public void stop()
+		public void Stop()
 		{
 			this.started = false;
 			this.paused = false;
 		}
 
-		bool isStarted()
+		public bool IsStarted
 		{
-			return this.started;
+			get { return this.started; }
 		}
 
-		bool isPaused()
+		public bool IsPaused
 		{
-			return this.paused;
+			get { return this.paused; }
 		}
 
 		void regulate()
@@ -252,7 +230,7 @@ namespace RPGEngine
 
 			this.FPS++;
 
-			if (!this.isStarted())
+			if (!this.IsStarted)
 				this.start();
 
 			if (this.GetTime() < 1000 / this.Config.Engine.FPS)
@@ -273,6 +251,14 @@ namespace RPGEngine
 			}
 			else
 				return GetTexture(filename, renderer, frames);
+		}
+
+		public static void ConvertSurface(IntPtr surface, IntPtr renderer, string filename, Vector2<int> frames)
+		{
+			var t = LoadTexture(renderer, filename, frames);
+
+			if (!Textures.ContainsKey(filename))
+				Textures.Add(filename, t);
 		}
 
 		public static Sprite GetTexture(string filename, IntPtr renderer, Vector2<int> frames)

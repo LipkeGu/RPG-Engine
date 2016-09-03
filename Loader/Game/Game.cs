@@ -64,7 +64,7 @@ namespace RPGEngine
 		{
 			this.video.Begin(Color.Black);
 
-			this.world.Render(this.WindowSize(), this.video.WindowSurface);
+			this.world.Render(this.WindowSize(), this.video.WindowSurface, ref renderer);
 		
 			this.video.End();
 		}
