@@ -6,66 +6,21 @@ namespace RPGEngine
 {
 	public class Game
 	{
-		Video video;
-		Audio audio;
-		Text text;
-		Settings config;
+		private Video video;
+		private Audio audio;
+		private Text text;
+		private Settings config;
+		private UserInferface ui;
+		private World world;
+		private SDL_Event events;
 
-		static string stext;
-		World world;
-		SDL_Event events;
-
-		public Game(ref Video video, ref Text text, ref Audio audio, ref Settings config)
+		public Game(ref Video video, ref Text text, ref Audio audio, ref Settings config, ref UserInferface ui)
 		{
 			this.video = video;
 			this.text = text;
 			this.audio = audio;
 			this.config = config;
-		}
-
-		public void Events(ref bool running)
-		{
-			while(SDL_PollEvent(out this.events) != 0)
-			{
-				switch (this.events.type)
-				{
-					case SDL_EventType.SDL_QUIT:
-						running = false;
-						break;
-					case SDL_EventType.SDL_KEYDOWN:
-					case SDL_EventType.SDL_KEYUP:
-						this.world.Events(ref this.events);
-						break;
-					default:
-						break;
-				}
-			}
-		}
-
-		public int Start()
-		{
-			this.world = new World(this.config.Player.Name, this.config.Engine.MapDirectory, this.config.Engine.ActorDirectory, this.video.Renderer, this.WindowSize());
-			return world != null ? 0 : -1;
-		}
-
-		public void Update()
-		{
-			this.world.Update(this.video.Renderer);
-		}
-
-		public void Render(IntPtr renderer)
-		{
-			this.video.Begin(Color.Black);
-
-			this.world.Render(this.WindowSize(), this.video.WindowSurface, ref renderer);
-		
-			this.video.End();
-		}
-
-		public void Close()
-		{
-			if (world != null)
-				this.world.Close();
+			this.ui = ui;
 		}
 
 		/// <summary>
@@ -77,6 +32,8 @@ namespace RPGEngine
 		public static void Print(LogType type, string src, string msg)
 		{
 			var source = src.Split('.');
+			var stext = string.Empty;
+
 			switch (type)
 			{
 				case LogType.Info:
@@ -88,9 +45,7 @@ namespace RPGEngine
 					stext = "[W]: {0}: {1}".F(source[source.Length - 1], msg);
 					break;
 				case LogType.Error:
-					Console.ForegroundColor = ConsoleColor.Red;
-					stext = "[E]: {0}: {1}".F(source[source.Length - 1], msg);
-					break;
+					throw new InvalidOperationException("{0}: {1}".F(source[source.Length - 1], msg));
 				case LogType.Debug:
 					Console.ForegroundColor = ConsoleColor.White;
 					stext = "[D]: {0}: {1}".F(source[source.Length - 1], msg);
@@ -106,15 +61,72 @@ namespace RPGEngine
 			Console.WriteLine(stext);
 		}
 
-		public Vector2<int> WindowSize()
+		public void Events(ref bool running)
 		{
-			var w = 0;
-			var h = 0;
-
-			SDL_GetWindowSize(this.video.Window, out w, out h);
-			return new Vector2<int>(w, h);
+			while (SDL_PollEvent(out this.events) != 0)
+			{
+				switch (this.events.type)
+				{
+					case SDL_EventType.SDL_QUIT:
+						running = false;
+						break;
+					case SDL_EventType.SDL_KEYDOWN:
+					case SDL_EventType.SDL_KEYUP:
+						this.world.Events(ref this.events);
+						this.ui.Events(ref this.events);
+						break;
+					case SDL_EventType.SDL_MOUSEMOTION:
+						Engine.MousePosition.X = this.events.motion.x;
+						Engine.MousePosition.Y = this.events.motion.y;
+						break;
+					default:
+						break;
+				}
+			}
 		}
 
+		public int Start()
+		{
+			this.world = new World(this.config.Player.Name, this.config.Engine.MapDirectory, 
+				this.config.Engine.ActorDirectory, this.video.Renderer, this.WindowSize());
 
+			return this.world != null ? 0 : -1;
+		}
+
+		public void Update()
+		{
+			this.world.Update();
+			this.ui.Update();
+		}
+
+		public void Render(IntPtr renderer)
+		{
+			var retval = -1;
+
+			retval = this.video.Begin(Color.Black);
+
+			retval = this.world.Render(this.WindowSize(), this.video.WindowSurface, ref renderer);
+
+			retval = this.ui.Render(this.video.WindowSurface, ref renderer, Color.BlanchedAlmond);
+
+			this.video.End();
+		}
+
+		public void Close()
+		{
+			if (this.world != null)
+				this.world.Close();
+
+			if (this.ui != null)
+				this.ui.Close();
+		}
+
+		public Vector2<int> WindowSize()
+		{
+			var size = new Vector2<int>(0, 0);
+
+			SDL_GetWindowSize(this.video.Window, out size.X, out size.Y);
+			return size;
+		}
 	}
 }

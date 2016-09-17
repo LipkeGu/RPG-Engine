@@ -5,15 +5,19 @@ namespace RPGEngine
 {
 	public class Input
 	{
-		IntPtr joystick = IntPtr.Zero;
-		string name;
+		private IntPtr joystick = IntPtr.Zero;
+		private string name;
 
 		public delegate void InputInitDoneEventHandler(object source, FinishEventArgs args);
+
 		public delegate void InputInitErrorEventHandler(object source, ErrorEventArgs args);
+
 		public delegate void InputInitStateEventHandler(object source, StateEventArgs args);
 
 		public event InputInitDoneEventHandler InputInitDone;
+
 		public event InputInitStateEventHandler InputInitState;
+
 		public event InputInitErrorEventHandler InputInitError;
 
 		public void Init(object obj)
@@ -22,9 +26,9 @@ namespace RPGEngine
 			this.name = SDL_JoystickName(this.joystick);
 
 			if (this.joystick != IntPtr.Zero)
-				OnInputInitState(GetType().ToString(), "using Joystick '{0}'".F(this.name));
+				this.OnInputInitState(GetType().ToString(), "using Joystick '{0}'".F(this.name));
 
-			OnInputInitDone(GetType().ToString(), "Input initialized!");
+			this.OnInputInitDone(GetType().ToString(), "Input initialized!");
 		}
 
 		public void Close()
@@ -40,27 +44,27 @@ namespace RPGEngine
 			fe.Source = source;
 			fe.Message = message;
 
-			InputInitDone?.Invoke(this, fe);
+			this.InputInitDone?.Invoke(this, fe);
 		}
 
-		protected virtual void OnInputInitError(string source, string ErrorMessage)
+		protected virtual void OnInputInitError(string source, string message)
 		{
 			var errvtargs = new ErrorEventArgs();
 
-			errvtargs.Message = ErrorMessage;
+			errvtargs.Message = message;
 			errvtargs.Source = source;
 
-			InputInitError?.Invoke(this, errvtargs);
+			this.InputInitError?.Invoke(this, errvtargs);
 		}
 
-		protected virtual void OnInputInitState(string source, string ErrorMessage)
+		protected virtual void OnInputInitState(string source, string message)
 		{
 			var statevtargs = new StateEventArgs();
 
-			statevtargs.Message = ErrorMessage;
+			statevtargs.Message = message;
 			statevtargs.Source = source;
 
-			InputInitState?.Invoke(this, statevtargs);
+			this.InputInitState?.Invoke(this, statevtargs);
 		}
 		#endregion
 	}

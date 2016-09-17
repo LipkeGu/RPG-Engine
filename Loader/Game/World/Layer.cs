@@ -1,6 +1,6 @@
-﻿using SDL2;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using SDL2;
 
 namespace RPGEngine
 {
@@ -8,21 +8,23 @@ namespace RPGEngine
 	{
 		public Dictionary<string, Tile> Tiles;
 		public LayerType LayerType;
-		public float width;
-		public float height;
+		public float Width, Height;
 
 		public Layer(Dictionary<string, Tile> tiles, LayerType layertype, float width, float height)
 		{
 			this.LayerType = layertype;
-			this.width = width;
-			this.height = height;
+			this.Width = width;
+			this.Height = height;
 			this.Tiles = tiles;
 		}
 
 		public void Update()
 		{
 			foreach (var tile in this.Tiles.Values)
+			{
+				tile.Type = this.LayerType;
 				tile.Update();
+			}
 		}
 
 		public void Events(ref SDL.SDL_Event e)
@@ -31,11 +33,15 @@ namespace RPGEngine
 				tile.Events(ref e);
 		}
 
-		public void Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, 
+		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, 
 			Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
+			var retval = -1;
+
 			foreach (var tile in this.Tiles.Values)
-				tile.Render(ref renderer, ref screen_surface, camera, screensize, type);
+				retval = tile.Render(ref renderer, ref screen_surface, camera, screensize, type);
+
+			return retval;
 		}
 
 		public void Close()

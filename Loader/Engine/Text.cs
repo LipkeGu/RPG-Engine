@@ -1,25 +1,23 @@
-﻿using SDL2;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
+using SDL2;
 
 namespace RPGEngine
 {
 	public class Text
 	{
-		IntPtr font;
+		private IntPtr font;
 
-		SDL.SDL_Rect target, source;
-		SDL.SDL_Color textcolor, backcolor;
+		private SDL.SDL_Rect target, source;
+		private SDL.SDL_Color textcolor, backcolor;
 
-		Sprite texture;
-		string text;
-		uint format;
-		TextMode mode;
+		private Sprite texture;
+		private string text, alias, fontfile;
+		private uint format;
+		private TextMode mode;
 
-		string alias;
-		string fontfile;
-		int fontsize, access;
+		private int fontsize, access;
 
 		public Text(IntPtr renderer, string fontfile, string alias, int fontsize, Color fontcolor, Color backcolor)
 		{
@@ -37,7 +35,6 @@ namespace RPGEngine
 
 			this.fontsize = fontsize;
 			this.mode = TextMode.Solid;
-
 
 			this.text = string.Empty;
 			this.OpenFont(fontfile, fontsize);
@@ -58,16 +55,28 @@ namespace RPGEngine
 			this.source = this.target;
 		}
 
-		public void Init(object obj)
-		{
-
-		}
-
 		/// <summary>
 		///	Returns the current Font 
 		/// </summary>
-		public IntPtr Font { get { return this.font; } }
-		public Sprite Texture { get { return this.texture; } }
+		public IntPtr Font
+		{
+			get
+			{
+				return this.font;
+			}
+		}
+
+		public Sprite Texture
+		{
+			get
+			{
+				return this.texture;
+			}
+		}
+
+		public void Init(object obj)
+		{
+		}
 
 		public void OpenFont(string filename, int size)
 		{
@@ -97,7 +106,6 @@ namespace RPGEngine
 
 		public void Update()
 		{
-
 		}
 
 		public void Render(ref IntPtr renderer)
@@ -105,31 +113,31 @@ namespace RPGEngine
 			switch (this.mode)
 			{
 				case TextMode.Solid:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), ref renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), ref renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 					break;
 				case TextMode.Blended:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), ref renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), ref renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 					break;
 				case TextMode.Wrapped:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), ref renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), ref renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 					break;
 				case TextMode.Shaded:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), ref renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1,1));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), ref renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 					break;
 				default:
 					break;
 				}
 				
-				this.texture = Engine.GetTexture(this.alias, ref renderer, new Vector2<int>(1, 1));
+				this.texture = Engine.GetTexture(this.alias, ref renderer, new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 				SDL.SDL_RenderCopy(renderer, this.texture.Image, ref this.source, ref this.target);
 		}
 
-		public void print(ref IntPtr renderer, string text, string alias, TextMode mode, int x = 20, int y = 20)
+		public void Print(ref IntPtr renderer, string text, string alias, TextMode mode, int x = 20, int y = 20)
 		{
 			this.mode = mode;
 			this.text = text;
 
-			this.texture = Engine.GetTexture(alias, ref renderer, new Vector2<int>(1,1));
+			this.texture = Engine.GetTexture(alias, ref renderer, new Vector2<int>(1, 1), new Vector2<int>(0, 0));
 			if (this.texture.Image == IntPtr.Zero)
 				Game.Print(LogType.Error, this.GetType().ToString(), "Text->Print(): {0}".F(SDL.SDL_GetError()));
 			else
@@ -144,7 +152,6 @@ namespace RPGEngine
 
 		public void Events(SDL.SDL_Event e)
 		{
-
 		}
 	}
 }

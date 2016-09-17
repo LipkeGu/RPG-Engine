@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SDL2;
+using System;
+using System.Drawing;
 
 namespace RPGEngine
 {
@@ -29,6 +31,19 @@ namespace RPGEngine
 			Y = y;
 		}
 	}
+
+	public class Portal
+	{
+		public RectangleF Position;
+		public string Map;
+
+		public Portal(Vector2<ulong> pos, string mapname, Vector2<uint> size)
+		{
+			this.Map = mapname;
+			this.Position = new RectangleF(pos.X, pos.Y, size.X, size.Y);
+		}
+	}
+
 
 	public enum Direction
 	{
@@ -61,7 +76,8 @@ namespace RPGEngine
 	{
 		Normal,
 		Editor,
-		Debug
+		Debug,
+		Menu
 	}
 
 	public enum LogType

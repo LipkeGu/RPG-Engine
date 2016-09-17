@@ -61,6 +61,10 @@
       <HintPath>..\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
+    <Reference Include="Tao.OpenGl, Version=2.1.0.12, Culture=neutral, PublicKeyToken=1ca010269a4501ef, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Tao.OpenGl.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Engine\Audio.cs" />
@@ -68,6 +72,7 @@
     <Compile Include="Engine\Text.cs" />
     <Compile Include="Exts.cs" />
     <Compile Include="Game\Game.cs" />
+    <Compile Include="Game\World\EventLogics\ChangeMapLogic.cs" />
     <Compile Include="Game\World\Layer.cs" />
     <Compile Include="Game\World\Map.cs" />
     <Compile Include="Game\World\Player.cs" />
@@ -127,6 +132,9 @@
     <None Include="Data\Actors\Brendan\walk_Brendan.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Data\Maps\PokeCenter\PokeCenter.map">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Data\Maps\TestMap\TestMap.map">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -136,6 +144,9 @@
     <None Include="Data\TIleset\town_0.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Data\TIleset\pokecenter.PNG" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

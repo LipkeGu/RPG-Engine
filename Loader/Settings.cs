@@ -12,7 +12,7 @@ namespace RPGEngine
 			public SDL.SDL_WindowFlags WindowFlags;
 			public Worldtype Worldmode;
 			public byte AudioChannels, Silence;
-			public ushort Samples, format;
+			public ushort Samples, Format;
 			
 			public EngineSettings()
 			{
@@ -21,8 +21,8 @@ namespace RPGEngine
 				#region "Video"
 				this.Width = 1024;
 				this.Height = 768;
-				this.FPS = 30;
-				this.WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
+				this.FPS = 24;
+				this.WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
 				#endregion
 
 				this.MapDirectory = "Data/Maps/";
@@ -39,7 +39,7 @@ namespace RPGEngine
 				this.AudioChannels = 2;
 				this.Samples = 4096;
 				this.Frequence = 48000;
-				this.format = 33056;
+				this.Format = 33056;
 				this.Silence = byte.MinValue;
 				this.Size = uint.MinValue;
 				#endregion

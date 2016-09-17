@@ -32,12 +32,18 @@ namespace RPGEngine
 
 		// Öffentliche Klassenvariablen
 
-		public string WertLesen(string Sektion, string Schlüssel, int BufferSize = 1024)
+		public string WertLesen(string Sektion, string Schlüssel, string default_value = "0", int BufferSize = 1024)
 		{
 			// Auslesen des Wertes
 			var value = new StringBuilder(BufferSize);
 			GetPrivateProfileString(Sektion, Schlüssel, this.defvalue, value, BufferSize, this.pfad);
-			return value.ToString();
+
+			var x = value.ToString();
+
+			if (!string.IsNullOrEmpty(x))
+				return x;
+			else
+				return default_value;
 		}
 
 		public void WertSchreiben(string Sektion, string Schlüssel, string Wert)

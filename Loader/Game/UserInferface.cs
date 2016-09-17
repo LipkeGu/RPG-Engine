@@ -1,18 +1,23 @@
-﻿using SDL2;
-using System;
+﻿using System;
+using System.Drawing;
+
+using SDL2;
 
 namespace RPGEngine
 {
 	public class UserInferface
 	{
-		SDL.SDL_Rect TileScreen;
+		private SDL.SDL_Rect tileScreen;
+		private bool renderUi;
 
-		public UserInferface()
+		public UserInferface(bool render_ui = true)
 		{
-			this.TileScreen.h = 32;
-			this.TileScreen.w = 32;
-			this.TileScreen.x = 50;
-			this.TileScreen.y = 50;
+			this.renderUi = render_ui;
+
+			this.tileScreen.h = 56;
+			this.tileScreen.w = 128;
+			this.tileScreen.x = 20;
+			this.tileScreen.y = 20;
 		}
 
 		public void Update()
@@ -21,18 +26,31 @@ namespace RPGEngine
 
 		public void Events(ref SDL.SDL_Event e)
 		{
+			if (e.type == SDL.SDL_EventType.SDL_KEYDOWN && e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F11)
+			{
+				if (this.renderUi)
+					this.renderUi = false;
+				else
+					this.renderUi = true;
+			}
 		}
 
 		public void Close()
 		{
 		}
 
-		public void Render(ref IntPtr windows_surface, ref IntPtr renderer)
+		public int Render(IntPtr windows_surface, ref IntPtr renderer, Color color)
 		{
-			SDL.SDL_SetRenderDrawColor(renderer, byte.MaxValue, byte.MinValue, byte.MinValue, byte.MaxValue);
-			SDL.SDL_RenderDrawRect(renderer, ref this.TileScreen);
-			SDL.SDL_SetRenderDrawColor(renderer, byte.MinValue, byte.MinValue, byte.MinValue, byte.MaxValue);
+			var retval = 0;
 
+			if (!this.renderUi)
+				return retval;
+
+			retval = SDL.SDL_SetRenderDrawColor(renderer, color.R, color.G, color.B, color.A);
+			retval = SDL.SDL_RenderFillRect(renderer, ref this.tileScreen);
+			retval = SDL.SDL_SetRenderDrawColor(renderer, byte.MinValue, byte.MinValue, byte.MinValue, byte.MaxValue);
+
+			return retval;
 		}
 	}
 }
