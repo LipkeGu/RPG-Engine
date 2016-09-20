@@ -13,7 +13,7 @@ namespace RPGEngine
 			if (old_map != null)
 				old_map.Close();
 
-			SDL2.SDL.SDL_Delay(2);
+			SDL2.SDL.SDL_Delay(1);
 
 			old_map = new_map;
 			old_map.Load(ref renderer, ref player);

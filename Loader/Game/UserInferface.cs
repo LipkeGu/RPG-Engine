@@ -33,15 +33,38 @@ namespace RPGEngine
 				else
 					this.renderUi = true;
 			}
+
+			switch (e.button.type)
+			{
+				case SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN:
+					switch (e.button.button)
+					{
+						case (byte)SDL.SDL_BUTTON_LEFT:
+							Console.WriteLine("Left Button clicked!");
+							break;
+						case (byte)SDL.SDL_BUTTON_RIGHT:
+							Console.WriteLine("Right Button clicked!");
+							break;
+						case (byte)SDL.SDL_BUTTON_MIDDLE:
+							Console.WriteLine("Middle Button clicked!");
+							break;
+						default:
+							break;
+					}
+					break;
+				default:
+					break;
+			}
+
 		}
 
 		public void Close()
 		{
 		}
 
-		public int Render(IntPtr windows_surface, ref IntPtr renderer, Color color)
+		public int Render(ref IntPtr windows_surface, ref IntPtr renderer, Color color)
 		{
-			var retval = 0;
+			var retval = -1;
 
 			if (!this.renderUi)
 				return retval;

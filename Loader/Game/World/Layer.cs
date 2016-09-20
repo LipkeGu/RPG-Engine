@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using SDL2;
 
 namespace RPGEngine
@@ -8,13 +9,10 @@ namespace RPGEngine
 	{
 		public Dictionary<string, Tile> Tiles;
 		public LayerType LayerType;
-		public float Width, Height;
 
-		public Layer(Dictionary<string, Tile> tiles, LayerType layertype, float width, float height)
+		public Layer(Dictionary<string, Tile> tiles, LayerType layertype)
 		{
 			this.LayerType = layertype;
-			this.Width = width;
-			this.Height = height;
 			this.Tiles = tiles;
 		}
 
@@ -33,13 +31,13 @@ namespace RPGEngine
 				tile.Events(ref e);
 		}
 
-		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, 
-			Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, ref Vector2<float> camera, 
+			ref Vector2<int> screensize, Worldtype type = Worldtype.Normal)
 		{
 			var retval = -1;
 
 			foreach (var tile in this.Tiles.Values)
-				retval = tile.Render(ref renderer, ref screen_surface, camera, screensize, type);
+				retval = tile.Render(ref renderer, ref screen_surface, ref camera, ref screensize, ref type);
 
 			return retval;
 		}

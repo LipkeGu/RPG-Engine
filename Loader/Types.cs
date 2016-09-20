@@ -36,11 +36,13 @@ namespace RPGEngine
 	{
 		public RectangleF Position;
 		public string Map;
+		public bool Enabled;
 
-		public Portal(Vector2<ulong> pos, string mapname, Vector2<uint> size)
+		public Portal(Vector2<ulong> pos, string mapname, Vector2<uint> size, bool enable = true)
 		{
 			this.Map = mapname;
 			this.Position = new RectangleF(pos.X, pos.Y, size.X, size.Y);
+			this.Enabled = enable;
 		}
 	}
 
@@ -108,5 +110,13 @@ namespace RPGEngine
 		Ground_Overlay,
 		Collision,
 		PlayerOverlay
+	}
+
+	interface IGame
+	{
+		void Render();
+		void Update();
+		void Events(ref SDL.SDL_Event e);
+		void Close();
 	}
 }

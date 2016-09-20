@@ -19,7 +19,7 @@ namespace RPGEngine
 
 		Sprite texture;
 
-		public Vector2<float> Camera, Position;
+		public Vector2<float> Location, Position;
 		
 		string name;
 
@@ -33,18 +33,20 @@ namespace RPGEngine
 			this.debug = false;
 
 			if (camera.X == 0 && camera.Y == 0)
-				this.Camera = startPos;
+				this.Location = startPos;
 			else
-				this.Camera = camera;
+				this.Location = camera;
 
 			var frames = this.player_file.WertLesen("Info", "Frames").Split(',');
 
 			var texture_entry_file = this.player_file.WertLesen("Textures", "Walk");
 			var texture_entry_offset = this.player_file.WertLesen("Info", "Offset").Split(',');
 
-			this.texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, texture_entry_file), ref renderer,
-				new Vector2<int>(int.Parse(frames[0]), int.Parse(frames[1])), new Vector2<int>(int.Parse(texture_entry_offset[0]),
-				int.Parse(texture_entry_offset[1])));
+			var texture_frames = new Vector2<int>(int.Parse(frames[0]), int.Parse(frames[1]));
+			var texture_offset = new Vector2<int>(int.Parse(texture_entry_offset[0]), int.Parse(texture_entry_offset[1]));
+
+			this.texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, 
+				texture_entry_file), ref renderer, ref texture_frames, ref texture_offset);
 
 			this.frame = new Vector2<int>(0, 0);
 			this.Position = startPos;
@@ -69,30 +71,25 @@ namespace RPGEngine
 					 select ct).FirstOrDefault();
 
 			if (t == null)
-				return Direction.None;
+				return dir;
 
 			if (p_top <= t.CollisionBox.Bottom && m_direction == Direction.Up) // Actor is moving from bottom to top
 			{
-				Game.Print(LogType.Debug, this.GetType().ToString(), "P-Top to collider-bottom!");
 				dir = Direction.Up;
 			}
 
 			if (p_bottom <= t.CollisionBox.Top && m_direction == Direction.Down) // Actor is moving to bottom from top
 			{
-
-				Game.Print(LogType.Debug, this.GetType().ToString(), "P-Bottom to collider-Top!");
 				dir = Direction.Down;
 			}
 
 			if (p_left >= t.CollisionBox.Right && m_direction == Direction.Left)
 			{
-				Game.Print(LogType.Debug, this.GetType().ToString(), "P-Left to collider-Right!");
 				dir = Direction.Left;
 			}
 
 			if (p_right <= t.CollisionBox.Left && m_direction == Direction.Right)
 			{
-				Game.Print(LogType.Debug, this.GetType().ToString(), "P-Right to collider-Left!");
 				dir = Direction.Right;
 			}
 
@@ -114,7 +111,7 @@ namespace RPGEngine
 				direction = ResolveCollision(ref col_layer, ref this.move_direction, e.key.keysym.sym);
 			}
 			else
-				throw new Exception("Undefined Definition: 'Layer2'");
+				Game.Print(LogType.Error, this.GetType().ToString(), "Undefined Definition: 'Layer2'");
 
 			var ground_layer = layers["Layer0"];
 
@@ -253,10 +250,8 @@ namespace RPGEngine
 				this.movetypeRect.X = this.collisionRect.X = this.texture.TargetRect.x = (int)this.Position.X;
 				this.movetypeRect.X = this.collisionRect.Y = this.texture.TargetRect.y = (int)this.Position.Y;
 
-				this.Camera.X = (this.Position.X * 2);
-				this.Camera.Y = (this.Position.Y * 2);
-
-				this.texture.Events(e);
+				this.Location.X = (this.Position.X * 2);
+				this.Location.Y = (this.Position.Y * 2);
 			}
 
 			#endregion
@@ -265,22 +260,20 @@ namespace RPGEngine
 		public void Update(ref IntPtr renderer)
 		{
 			texture = Engine.GetTexture(Path.Combine("Data/Actors/", this.name, this.player_file.WertLesen("Textures",
-				this.movingtype.ToString())), ref renderer,
-				new Vector2<int>(this.texture.Frames.X, this.texture.Frames.Y),
-				new Vector2<int>(this.texture.Offset.X, this.texture.Offset.Y));
+				this.movingtype.ToString())), ref renderer, ref this.texture.Frames, ref this.texture.Offset);
 
 			this.texture.Update();
 		}
 
-		public int Render(ref IntPtr renderer, Vector2<int> screensize)
+		public int Render(ref IntPtr renderer, Vector2<int> screensize, Vector2<int> size)
 		{
 			var retval = -1;
 
-			this.collisionRect.Width = 28;
-			this.collisionRect.Height = 28;
+			this.collisionRect.Width = (size.X - 4);
+			this.collisionRect.Height = (size.Y - 4);
 
-			this.movetypeRect.Width = 32;
-			this.movetypeRect.Height = 32;
+			this.movetypeRect.Width = size.X;
+			this.movetypeRect.Height = size.Y;
 
 
 			this.texture.TargetRect.x = (screensize.X / 2) - (this.texture.FrameSize.X / 2);
@@ -297,7 +290,7 @@ namespace RPGEngine
 			if (debug)
 			{
 				retval = Video.DrawRect(ref renderer, (int)collisionRect.X, (int)collisionRect.Y,
-					(int)collisionRect.Width, (int)collisionRect.Height, Color.Red, true);
+					(int)collisionRect.Width, (int)collisionRect.Height, Color.Red);
 			}
 
 			return retval;
@@ -311,9 +304,11 @@ namespace RPGEngine
 		public void GetTileType(ref Layer layer, out TileType tiletype, out int walk_speed,
 			out int bike_speed, out int dive_speed, out MovingType movingtype)
 		{
-			var tiles = (from t in layer.Tiles.Values where t.Type == LayerType.Ground select t).ToList();
+			var tiles = (from t in layer.Tiles.Values
+						 where t.Type == LayerType.Ground || t.Type == LayerType.Ground_Overlay
+						 select t).ToList();
+
 			foreach (var tile in tiles)
-			{
 				if (this.movetypeRect.IntersectsWith(tile.MovingBox))
 				{
 					tiletype = tile.Tiletype;
@@ -324,7 +319,6 @@ namespace RPGEngine
 
 					return;
 				}
-			}
 			
 			tiletype = TileType.None;
 			movingtype = MovingType.Walk;

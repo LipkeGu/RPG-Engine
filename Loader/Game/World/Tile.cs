@@ -23,6 +23,9 @@ namespace RPGEngine
 		public int walk_speed, dive_speed, bike_speed;
 		LayerType layertype;
 
+		public Tile()
+		{}
+
 		public Tile(ref Sprite image, Vector2<uint> source, Vector2<uint> size, Vector2<ulong> target,
 			LayerType layertype, bool passable, Vector2<float> camera, TileType tiletype)
 		{
@@ -120,8 +123,8 @@ namespace RPGEngine
 					break;
 			}
 
-			this.TargetRect.x = (int)(target.X * size.Y);
-			this.TargetRect.y = (int)(target.Y * size.Y);
+			this.TargetRect.x = (int)(target.X);
+			this.TargetRect.y = (int)(target.Y);
 
 			this.SourceRect.x = (int)source.X;
 			this.SourceRect.y = (int)source.Y;
@@ -203,7 +206,8 @@ namespace RPGEngine
 		{
 		}
 
-		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, Vector2<float> camera, Vector2<int> screensize, Worldtype type = Worldtype.Normal)
+		public int Render(ref IntPtr renderer, ref IntPtr screen_surface, ref Vector2<float> camera, 
+			ref Vector2<int> screensize, ref Worldtype type)
 		{
 			var retval = -1;
 
@@ -253,7 +257,7 @@ namespace RPGEngine
 				retval = Video.DrawRect(ref renderer, this.offset.x, this.offset.y, this.offset.w, this.offset.h, color);
 
 				if (this.mouse_focus)
-					retval = Video.DrawRect(ref renderer, this.offset.x, this.offset.y, this.offset.w, this.offset.h, Color.DarkOrange, true);
+					retval = Video.DrawRect(ref renderer, this.offset.x, this.offset.y, this.offset.w, this.offset.h, Color.DarkOrange);
 			}
 
 			if (this.portal != null)

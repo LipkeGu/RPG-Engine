@@ -5,12 +5,11 @@ namespace RPGEngine
 {
 	public class Audio
 	{
-		private int errnum = -1;
 		private uint audioDevice = uint.MaxValue;
 		private string deviceName;
 
 		private SDL_AudioSpec audioSpec, obtainedSpec;
-		private SDL_AudioCallback audiocallback;
+		private SDL_AudioCallback callback;
 
 		public delegate void AudioInitDoneEventHandler(object source, FinishEventArgs args);
 
@@ -32,14 +31,14 @@ namespace RPGEngine
 		public void Init(object obj)
 		{
 			var config = (Settings)obj;
-			this.errnum = SDL_Init(SDL_INIT_AUDIO);
+			var errnum = SDL_Init(SDL_INIT_AUDIO);
 
-			if (this.errnum != 0)
-				this.OnAudioInitError(this.GetType().ToString(), SDL_GetError());
+			if (errnum != 0)
+				this.onAudioInitError(this.GetType().ToString(), SDL_GetError());
 			
-			this.audiocallback = new SDL_AudioCallback(this.Audiocallback);
+			this.callback = new SDL_AudioCallback(this.audiocallback);
 			this.audioSpec.freq = config.Engine.Frequence;
-			this.audioSpec.format = config.Engine.format;
+			this.audioSpec.format = config.Engine.Format;
 			this.audioSpec.channels = config.Engine.AudioChannels;
 			this.audioSpec.samples = config.Engine.Samples;
 			this.audioSpec.silence = config.Engine.Silence;
@@ -47,17 +46,17 @@ namespace RPGEngine
 
 			this.audioSpec.callback = this.audiocallback;
 
-			this.errnum = SDL_OpenAudio(ref this.audioSpec, out this.obtainedSpec);
-			if (this.errnum != 0)
-				this.OnAudioInitError(this.GetType().ToString(), SDL_GetError());
+			errnum = SDL_OpenAudio(ref this.audioSpec, out this.obtainedSpec);
+			if (errnum != 0)
+				this.onAudioInitError(this.GetType().ToString(), SDL_GetError());
 
 			this.deviceName = SDL_GetAudioDeviceName(SDL_GetNumAudioDevices(0) - 1, 0);
-
 			this.audioDevice = SDL_OpenAudioDevice(this.deviceName, 0, ref this.audioSpec, out this.obtainedSpec, 1);
-			if (this.audioDevice != uint.MaxValue)
-				this.OnAudioInitState(this.GetType().ToString(), "using Audiodevice '{0}'".F(this.deviceName));
 
-			this.OnAudioInitDone(this.GetType().ToString(), "Audio initialized!");
+			if (this.audioDevice != uint.MaxValue)
+				this.onAudioInitState(this.GetType().ToString(), "using Audiodevice '{0}'".F(this.deviceName));
+
+			this.onAudioInitDone(this.GetType().ToString(), "Audio initialized!");
 		}
 
 		public void Close()
@@ -81,7 +80,7 @@ namespace RPGEngine
 		}
 
 		#region Events
-		protected virtual void OnAudioInitDone(string source, string message)
+		protected virtual void onAudioInitDone(string source, string message)
 		{
 			var fe = new FinishEventArgs();
 			fe.Source = source;
@@ -90,7 +89,7 @@ namespace RPGEngine
 			this.AudioInitDone?.Invoke(this, fe);
 		}
 
-		protected virtual void OnAudioInitError(string source, string message)
+		protected virtual void onAudioInitError(string source, string message)
 		{
 			var errvtargs = new ErrorEventArgs();
 
@@ -100,7 +99,7 @@ namespace RPGEngine
 			this.AudioInitError?.Invoke(this, errvtargs);
 		}
 
-		protected virtual void OnAudioInitState(string source, string message)
+		protected virtual void onAudioInitState(string source, string message)
 		{
 			var statevtargs = new StateEventArgs();
 
@@ -111,7 +110,7 @@ namespace RPGEngine
 		}
 		#endregion
 
-		private void Audiocallback(IntPtr userdata, IntPtr stream, int len)
+		private void audiocallback(IntPtr userdata, IntPtr stream, int len)
 		{
 		}
 	}

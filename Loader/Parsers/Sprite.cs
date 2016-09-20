@@ -9,37 +9,46 @@ namespace RPGEngine
 		IntPtr image;
 		int width, height;
 		
-		Vector2<int> frames, frameSize, offset;
-		
+		Vector2<int> frameSize;
+		public Vector2<int> Offset, Frames;
 		public SDL.SDL_Rect SourceRect, TargetRect;
 
 		string filename;
 
-		public Sprite(string filename, ref IntPtr renderer, Vector2<int> frames, Vector2<int> offset)
+		public Sprite(string filename, ref IntPtr renderer, ref Vector2<int> frames, ref Vector2<int> offset)
 		{
 			if (!File.Exists(filename))
-				throw new FileNotFoundException(filename);
+				Game.Print(LogType.Error, this.GetType().ToString(), "File not Found: {0}".F(filename));
+
+			this.filename = filename;
 
 			var format = uint.MinValue;
 			var access = 0;
+			var retval = -1;
 
-			this.filename = filename;
-			
 			this.image = SDL_image.IMG_LoadTexture(renderer, this.filename);
-			SDL.SDL_QueryTexture(this.image, out format, out access, out this.width, out this.height);
 
-			this.frames = frames;
-			this.offset = offset;
+			retval = SDL.SDL_QueryTexture(this.image, out format,
+				out access, out this.width, out this.height);
+
+			if (retval != 0)
+				Game.Print(LogType.Error, this.GetType().ToString(), SDL.SDL_GetError());
+
+			this.Frames = frames;
+			this.Offset = offset;
 
 			this.frameSize = new Vector2<int>((this.width / frames.X), (this.height / frames.Y));
 
-			this.TargetRect.h = this.SourceRect.h = (int)this.frameSize.Y;
-			this.TargetRect.w = this.SourceRect.w = (int)this.frameSize.X;
+			this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
+			this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
 
-			this.TargetRect.x = this.SourceRect.x = 0 * (int)this.frameSize.X;
-			this.TargetRect.y = this.SourceRect.y = 0 * (int)this.frameSize.Y;
+			this.TargetRect.x = this.SourceRect.x = (this.Offset.X * this.frameSize.X);
+			this.TargetRect.y = this.SourceRect.y = (this.Offset.Y * this.frameSize.Y);
 		}
 
+		/// <summary>
+		/// The Size of the Frame 
+		/// </summary>
 		public Vector2<int> FrameSize
 		{
 			set
@@ -51,11 +60,17 @@ namespace RPGEngine
 			get { return this.frameSize; }
 		}
 
+		/// <summary>
+		/// The entire width of the Texture
+		/// </summary>
 		public int Width
 		{
 			get { return this.width; }
 		}
 
+		/// <summary>
+		/// The entire height of the Texture
+		/// </summary>
 		public int Height
 		{
 			get { return this.height; }
@@ -64,11 +79,6 @@ namespace RPGEngine
 		public string Filename
 		{
 			get { return this.filename; }
-		}
-
-		public Vector2<int> Frames
-		{
-			get { return this.frames; }
 		}
 
 		public IntPtr Image
@@ -84,7 +94,7 @@ namespace RPGEngine
 
 		public void Update()
 		{
-			this.frameSize = new Vector2<int>((this.width / frames.X), (this.height / frames.Y));
+			this.frameSize = new Vector2<int>((this.width / this.Frames.X), (this.height / this.Frames.Y));
 
 			this.TargetRect.h = this.SourceRect.h = this.frameSize.Y;
 			this.TargetRect.w = this.SourceRect.w = this.frameSize.X;
@@ -95,15 +105,8 @@ namespace RPGEngine
 
 		}
 
-		public Vector2<int> Offset
-		{
-			get { return this.offset; }
-			set { this.offset = value; }
-		}
-
 		public void Close()
 		{
-			Game.Print(LogType.Debug, this.GetType().ToString(), "Unloading Texture: {0}".F(this.filename));
 			SDL.SDL_DestroyTexture(this.image);
 		}
 	}

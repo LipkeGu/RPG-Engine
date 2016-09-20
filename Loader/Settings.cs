@@ -7,7 +7,6 @@ namespace RPGEngine
 		public class EngineSettings
 		{
 			public int Width, Height, FontSize, Frequence;
-			public string Map, FontFile, MapDirectory, ActorDirectory, FontDirectory, TilesetDirectory;
 			public uint FPS, Size;
 			public SDL.SDL_WindowFlags WindowFlags;
 			public Worldtype Worldmode;
@@ -22,16 +21,10 @@ namespace RPGEngine
 				this.Width = 1024;
 				this.Height = 768;
 				this.FPS = 24;
-				this.WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL;
+				this.WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL.SDL_WindowFlags.SDL_WINDOW_MOUSE_FOCUS;
 				#endregion
 
-				this.MapDirectory = "Data/Maps/";
-				this.ActorDirectory = "Data/Actors/";
-				this.FontDirectory = "Data/Fonts/";
-				this.TilesetDirectory = "Data/Tilesets/";
-
 				#region "Text"
-				this.FontFile = "regular.ttf";
 				this.FontSize = 12;
 				#endregion
 
@@ -49,10 +42,10 @@ namespace RPGEngine
 		public class GameSettings
 		{
 			string title;
+
 			public GameSettings()
 			{
 				this.title = "RPG-Engine";
-
 			}
 
 			public string Title

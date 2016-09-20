@@ -110,25 +110,28 @@ namespace RPGEngine
 
 		public void Render(ref IntPtr renderer)
 		{
+			var frames = new Vector2<int>(1, 1);
+			var offset = new Vector2<int>(0, 0);
+
 			switch (this.mode)
 			{
 				case TextMode.Solid:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), ref renderer, "{0}_Solid".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Solid(this.font, this.text, this.textcolor), ref renderer, "{0}_Solid".F(this.text), ref frames, ref offset);
 					break;
 				case TextMode.Blended:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), ref renderer, "{0}_Blended".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended(this.font, this.text, this.textcolor), ref renderer, "{0}_Blended".F(this.text), ref frames, ref offset);
 					break;
 				case TextMode.Wrapped:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), ref renderer, "{0}_Wrapped".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Blended_Wrapped(this.font, this.text, this.textcolor, 180), ref renderer, "{0}_Wrapped".F(this.text), ref frames, ref offset);
 					break;
 				case TextMode.Shaded:
-					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), ref renderer, "{0}_Shaded".F(this.text), new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+					Engine.ConvertSurface(SDL_ttf.TTF_RenderText_Shaded(this.font, this.text, this.textcolor, this.backcolor), ref renderer, "{0}_Shaded".F(this.text), ref frames, ref offset);
 					break;
 				default:
 					break;
 				}
 				
-				this.texture = Engine.GetTexture(this.alias, ref renderer, new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+				this.texture = Engine.GetTexture(this.alias, ref renderer, ref frames, ref offset);
 				SDL.SDL_RenderCopy(renderer, this.texture.Image, ref this.source, ref this.target);
 		}
 
@@ -136,8 +139,10 @@ namespace RPGEngine
 		{
 			this.mode = mode;
 			this.text = text;
+			var frames = new Vector2<int>(1, 1);
+			var offset = new Vector2<int>(0, 0);
 
-			this.texture = Engine.GetTexture(alias, ref renderer, new Vector2<int>(1, 1), new Vector2<int>(0, 0));
+			this.texture = Engine.GetTexture(alias, ref renderer, ref frames, ref offset);
 			if (this.texture.Image == IntPtr.Zero)
 				Game.Print(LogType.Error, this.GetType().ToString(), "Text->Print(): {0}".F(SDL.SDL_GetError()));
 			else

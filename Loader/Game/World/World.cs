@@ -17,13 +17,13 @@ namespace RPGEngine
 
 		Dictionary<string, Map> Maps;
 		
-		public World(string Playername, string MapDirectory, string actorsDirectory, IntPtr renderer, Vector2<int> screenSize)
+		public World(string Playername, IntPtr renderer, Vector2<int> screenSize)
 		{
 			this.Maps = new Dictionary<string, Map>();
 			this.debug = false;
 			this.renderer = renderer;
 
-			this.ReadMaps(MapDirectory);
+			this.ReadMaps("Data/Maps/");
 			
 			if (this.Maps.Count > 0)
 			{
@@ -31,7 +31,7 @@ namespace RPGEngine
 				this.map.Mapcreated += OnMapCreated;
 
 				this.map.Load(ref this.renderer, ref player);
-				this.ReadActors(Playername, actorsDirectory, ref this.renderer);
+				this.ReadActors(Playername, "Data/Actors/", ref this.renderer);
 			}
 		}
 
@@ -43,14 +43,15 @@ namespace RPGEngine
 			foreach (var fil in actorsDir.GetFiles("{0}.ini".F(Playername), SearchOption.AllDirectories))
 				if (fil.Length > 0 && fil.Exists)
 				{
-					players.Add(Playername, new Player(ref renderer, "Data/Actors/{0}".F(fil.Name), 
+					players.Add(Playername, new Player(ref renderer, "{0}".F(fil.FullName), 
 						this.camera, this.map.StartPosition));
 
 					this.player = players[Playername];
 					break;
 				}
 				else
-					throw new FileNotFoundException("File Not found: Data/Actors/{0}".F(fil.Name));
+
+					throw new FileNotFoundException("File Not found: {0}".F(fil.FullName));
 		}
 
 		private void ReadMaps(string path)
@@ -64,13 +65,11 @@ namespace RPGEngine
 					mapname = fil.Name.Split('.')[0];
 					this.Maps.Add(mapname, new Map(mapname, fil.FullName, Worldtype.Normal));
 				}
-
-			Game.Print(LogType.Debug, GetType().ToString(), "Found {0} Map(s)!".F(this.Maps.Count));
 		}
 
 		private void OnMapCreated(object source, EventArgs e)
 		{
-			Game.Print(LogType.Debug, GetType().ToString(), "Map '{0}' loaded!".F(this.map.Name));
+			Game.Print(LogType.Notice, GetType().ToString(), "Map '{0}' loaded!".F(this.map.Name));
 		}
 
 		public void Update()
@@ -79,13 +78,13 @@ namespace RPGEngine
 			{
 				this.player.DebugMode = this.debug;
 				this.player.Update(ref this.renderer);
+				this.camera = this.player.Location;
 			}
 
 			if (this.map != null)
 			{
 				this.map.DebugMode = this.debug;
 				this.map.Update(ref this.player);
-
 			}
 			else
 				Game.Print(LogType.Debug, "Map", "Map is null");
@@ -98,9 +97,9 @@ namespace RPGEngine
 			if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F8)
 				this.debug = this.debug ? false : true;
 
-			if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F7)
+			if (e.key.keysym.sym == SDL.SDL_Keycode.SDLK_F7 && this.debug)
 			{
-				var pc = Maps["PokeCenter"];
+				var pc = this.Maps["PokeCenter"];
 				var x = new ChangeMapLogic(ref this.map, ref pc, ref player, ref this.renderer);
 				return;
 			}
@@ -108,9 +107,11 @@ namespace RPGEngine
 			if (this.map != null)
 			{
 				this.map.Events(ref e);
+
 				var portal = (from p in map.Portals.Values
 							  where p.Position.IntersectsWith(this.player.MovingBox)
-							  where p.Map != null
+							  where !string.IsNullOrEmpty(p.Map)
+							  where p.Enabled
 							  select p).ToList();
 
 				if (portal.Count > 0)
@@ -121,12 +122,11 @@ namespace RPGEngine
 			}
 		}
 
-		public int Render(Vector2<int> screensize, IntPtr screen_surface, ref IntPtr renderer)
+		public int Render(ref Vector2<int> screensize, ref IntPtr screen_surface, ref IntPtr renderer)
 		{
 			var retval = -1;
-
-			this.camera = this.player.Camera;
-			retval = this.map.Render(ref renderer, this.camera, ref screen_surface, screensize, ref this.player);
+			
+			retval = this.map.Render(ref renderer, ref this.camera, ref screen_surface, ref screensize, ref this.player);
 
 			return retval;
 		}
@@ -138,6 +138,11 @@ namespace RPGEngine
 
 			if (this.map != null)
 				this.map.Close();
+
+			foreach (var map in this.Maps.Values)
+			{
+				map.Close();
+			}
 		}
 	}
 }

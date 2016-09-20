@@ -9,8 +9,9 @@ namespace RPGEngine
 	{
 		#region private Fields
 		private IntPtr window, renderer;
-		private SDL_WindowFlags flags;
-		private int width, height;
+		private SDL_DisplayMode dspMode;
+
+		private int width, height, bpp;
 
 		private string title;
 
@@ -28,12 +29,6 @@ namespace RPGEngine
 
 		public event VideoInitErrorEventHandler VideoInitError;
 
-		public enum LoadIMGFlags
-		{
-			normal,
-			texture
-		}
-
 		/// <summary>
 		/// Bit per Pixel (from Primary Display)
 		/// </summary>
@@ -41,7 +36,7 @@ namespace RPGEngine
 		{
 			get
 			{
-				return 32;
+				return this.bpp;
 			}
 		}
 
@@ -59,12 +54,9 @@ namespace RPGEngine
 		/// <summary>
 		///	Returns the current Window surface
 		/// </summary>
-		public IntPtr WindowSurface
+		public IntPtr WindowSurface()
 		{
-			get
-			{
-				return SDL_GetWindowSurface(this.window);
-			}
+			return SDL_GetWindowSurface(this.window);
 		}
 
 		/// <summary>
@@ -79,7 +71,7 @@ namespace RPGEngine
 		}
 
 		/// <summary>
-		/// Draws an Rectangle (SDL_Rect) on the screen (Window)
+		/// Draws an Color filled Rectangle on the screen (Window)
 		/// </summary>
 		/// <param name="renderer"></param>
 		/// <param name="x">position X</param>
@@ -87,10 +79,11 @@ namespace RPGEngine
 		/// <param name="w">Width</param>
 		/// <param name="h">Height</param>
 		/// <param name="color">Color</param>
-		public static int DrawRect(ref IntPtr renderer, int x, int y, int w, int h, Color color, bool fill = false)
+		public static int DrawRect(ref IntPtr renderer, int x, int y, int w, int h, Color color)
 		{
 			var retval = -1;
 			var rect = new SDL_Rect();
+
 			rect.h = h;
 			rect.w = w;
 
@@ -122,39 +115,37 @@ namespace RPGEngine
 			this.OnVideoInitState(this.GetType().ToString(), "Waiting for the Video Subsystem...");
 			
 			var errnum = -1;
-			this.flags = config.Engine.WindowFlags;
+			var flags = config.Engine.WindowFlags;
 
-			errnum = IMG_Init(IMG_InitFlags.IMG_INIT_PNG);
+			errnum = IMG_Init(IMG_InitFlags.IMG_INIT_PNG | IMG_InitFlags.IMG_INIT_JPG);
 			if (errnum == -1)
 				this.OnVideoInitError(this.GetType().ToString(), "IMG_Init(): {0}".F(SDL_GetError()));
 
-			this.OnVideoInitState(this.GetType().ToString(), "Image subsystem initialized!");
-
-			this.window = SDL_CreateWindow(this.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this.width, this.height, this.flags);
+			this.window = SDL_CreateWindow(this.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, this.width, this.height, flags);
 
 			if (this.window == IntPtr.Zero)
 				this.OnVideoInitError(this.GetType().ToString(), "SDL_CreateWindow(): {0}".F(SDL_GetError()));
-			else
-				this.OnVideoInitState(this.GetType().ToString(), "Window created!");
 
 			this.renderer = SDL_CreateRenderer(this.window, 0, SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
 			if (this.renderer == IntPtr.Zero)
 				this.OnVideoInitError(this.GetType().ToString(), "SDL_CreateRenderer(): {0}".F(SDL_GetError()));
-			else
-				this.OnVideoInitState(this.GetType().ToString(), "Renderer created!");
 
 			if (SDL_SetHint("SDL_HINT_RENDER_VSYNC", "1") == SDL_bool.SDL_FALSE)
 				this.OnVideoInitError(this.GetType().ToString(), "SDL_SetHint(): 'Vsync' is not enabled!");
-			else
-				this.OnVideoInitState(this.GetType().ToString(), "'VSync' enabled!");
 
 			if (SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "1") == SDL_bool.SDL_FALSE)
 				this.OnVideoInitError(this.GetType().ToString(), "SDL_SetHint(): 'Linear texture filtering' is not enabled!");
-			else
-				this.OnVideoInitState(this.GetType().ToString(), "'Linear texture filtering' enabled!");
 
-			this.OnVideoInitDone("starting Game...");
+			if (SDL_GetCurrentDisplayMode(0, out this.dspMode) != 0)
+				this.OnVideoInitError(this.GetType().ToString(), "SDL_GetDesktopDisplayMode(): {0}".F(SDL_GetError()));
+
+			SDL_SetWindowMinimumSize(this.window, this.width, this.height);
+			SDL_SetWindowMaximumSize(this.window, (this.dspMode.w - 160), this.dspMode.h - 160);
+			
+			this.bpp = (int)SDL_BITSPERPIXEL(this.dspMode.format);
+
+			this.OnVideoInitDone("Starting Game...");
 		}
 
 		/// <summary>
@@ -177,31 +168,13 @@ namespace RPGEngine
 		}
 
 		/// <summary>
-		///	Loads an Image from File and returns the desired type (Image or Texture). 
-		/// </summary>
-		/// <param name="filename">The Path to the Image</param>
-		/// <param name="flags">Normal (Handle as Picture) or Texture (Handle as Texture)</param>
-		/// <returns>On Normal a PNG, on Texture a Texture otherwise 0 for Error</returns>
-		public IntPtr LoadPNG(string filename, LoadIMGFlags flags = LoadIMGFlags.texture)
-		{
-			switch (flags)
-			{
-				case LoadIMGFlags.normal:
-					return IMG_Load(filename);
-				case LoadIMGFlags.texture:
-					return IMG_LoadTexture(this.renderer, filename);
-				default:
-					return IntPtr.Zero;
-			}
-		}
-
-		/// <summary>
 		/// Closes the SDL Instances.
 		/// </summary>
 		public void Close()
 		{
 			IMG_Quit();
 			SDL_VideoQuit();
+
 			SDL_DestroyRenderer(this.renderer);
 			SDL_DestroyWindow(this.window);
 		}
@@ -216,7 +189,7 @@ namespace RPGEngine
 		}
 
 		/// <summary>
-		/// Reports the Video subsystem to "begin" the rendering..
+		/// Reports the Video subsystem to "begin" the rendering...
 		/// </summary>
 		/// <param name="color">Draw color</param>
 		public int Begin(Color color)
@@ -232,6 +205,7 @@ namespace RPGEngine
 		protected virtual void OnVideoInitDone(string message)
 		{
 			var fe = new FinishEventArgs();
+
 			fe.Source = this.GetType().ToString();
 			fe.Message = message;
 

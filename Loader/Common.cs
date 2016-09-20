@@ -70,17 +70,17 @@ namespace RPGEngine
 			else
 				xmlSettingsReader.Save(settingsFile, this.Config);
 
-			this.Video.VideoInitDone += this.OnVideoInitDone;
-			this.Video.VideoInitError += this.OnVideoInitError;
-			this.Video.VideoInitState += this.OnVideoInitState;
+			this.Video.VideoInitDone += this.onVideoInitDone;
+			this.Video.VideoInitError += this.onVideoInitError;
+			this.Video.VideoInitState += this.onVideoInitState;
 
-			this.Audio.AudioInitDone += this.Audio_AudioInitDone;
-			this.Audio.AudioInitError += this.Audio_AudioInitError;
-			this.Audio.AudioInitState += this.Audio_AudioInitState;
+			this.Audio.AudioInitDone += this.audio_AudioInitDone;
+			this.Audio.AudioInitError += this.audio_AudioInitError;
+			this.Audio.AudioInitState += this.audio_AudioInitState;
 
-			this.Input.InputInitDone += this.Input_InputInitDone;
-			this.Input.InputInitError += this.Input_InputInitError;
-			this.Input.InputInitState += this.Input_InputInitState; 
+			this.Input.InputInitDone += this.input_InputInitDone;
+			this.Input.InputInitError += this.input_InputInitError;
+			this.Input.InputInitState += this.input_InputInitState; 
 		}
 
 		public bool IsStarted
@@ -93,20 +93,20 @@ namespace RPGEngine
 			get { return this.paused; }
 		}
 
-		public static void ConvertSurface(IntPtr surface, ref IntPtr renderer, string filename, Vector2<int> frames, Vector2<int> offset)
+		public static void ConvertSurface(IntPtr surface, ref IntPtr renderer, string filename, ref Vector2<int> frames, ref Vector2<int> offset)
 		{
-			var t = loadTexture(ref renderer, filename, frames, offset);
+			var t = loadTexture(ref renderer, filename, ref frames, ref offset);
 
 			if (!Textures.ContainsKey(filename))
 				Textures.Add(filename, t);
 		}
 
-		public static Sprite GetTexture(string filename, ref IntPtr renderer, Vector2<int> frames, Vector2<int> offset)
+		public static Sprite GetTexture(string filename, ref IntPtr renderer, ref Vector2<int> frames, ref Vector2<int> offset)
 		{
 			if (Textures.ContainsKey(filename))
 				return Textures[filename];
 			else
-				return loadTexture(ref renderer, filename, frames, offset);
+				return loadTexture(ref renderer, filename, ref frames, ref offset);
 		}
 
 		public static void UnloadTextures(bool clear_cache = false)
@@ -185,9 +185,9 @@ namespace RPGEngine
 			this.paused = false;
 		}
 
-		private static Sprite loadTexture(ref IntPtr renderer, string filename, Vector2<int> frames, Vector2<int> offset)
+		private static Sprite loadTexture(ref IntPtr renderer, string filename, ref Vector2<int> frames, ref Vector2<int> offset)
 		{
-			var t = new Sprite(filename, ref renderer, frames, offset);
+			var t = new Sprite(filename, ref renderer, ref frames, ref offset);
 
 			if (!Textures.ContainsKey(filename))
 			{
@@ -195,7 +195,7 @@ namespace RPGEngine
 				return t;
 			}
 			else
-				return GetTexture(filename, ref renderer, frames, offset);
+				return GetTexture(filename, ref renderer, ref frames, ref offset);
 		}
 
 		private void start()
@@ -222,59 +222,64 @@ namespace RPGEngine
 				this.start();
 		}
 
-		private void Input_InputInitState(object source, StateEventArgs args)
+		private void input_InputInitState(object source, StateEventArgs args)
 		{
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
-		private void Input_InputInitError(object source, ErrorEventArgs args)
+		private void input_InputInitError(object source, ErrorEventArgs args)
 		{
 			throw new Exception("{0}: {1}".F(args.Source, args.Message));
 		}
 
-		private void Input_InputInitDone(object source, FinishEventArgs args)
+		private void input_InputInitDone(object source, FinishEventArgs args)
 		{
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
-		private void Audio_AudioInitState(object source, StateEventArgs args)
+		private void audio_AudioInitState(object source, StateEventArgs args)
 		{
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
-		private void Audio_AudioInitError(object source, ErrorEventArgs args)
+		private void audio_AudioInitError(object source, ErrorEventArgs args)
 		{
 			throw new Exception("{0}: {1}".F(args.Source, args.Message));
 		}
 
-		private void Audio_AudioInitDone(object source, FinishEventArgs args)
+		private void audio_AudioInitDone(object source, FinishEventArgs args)
 		{
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
-		private void OnVideoInitState(object source, StateEventArgs args)
+		private void onVideoInitState(object source, StateEventArgs args)
 		{
 			Game.Print(LogType.Debug, args.Source, args.Message);
 		}
 
-		private void OnVideoInitError(object source, ErrorEventArgs e)
+		private void onVideoInitError(object source, ErrorEventArgs e)
 		{
 			this.haveVideo = false;
 			throw new Exception("{0}: {1}".F(e.Source, e.Message));
 		}
 
-		private void OnVideoInitDone(object source, FinishEventArgs e)
+		private void onVideoInitDone(object source, FinishEventArgs e)
 		{
 			this.haveVideo = true;
+
 			if (this.haveVideo && this.game.Start() == 0)
 			{
 				this.running = true;
 
 				while (this.running)
 				{
-					this.game.Events(ref this.running);
+					this.game.Events(ref this.running, ref this.paused);
+					if (IsPaused)
+						continue;
+
 					this.game.Update();
 					this.game.Render(this.Video.Renderer);
+
 					this.regulate();
 				}
 			}
