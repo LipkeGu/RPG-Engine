@@ -20,7 +20,7 @@ namespace RPGEngine
 		public delegate void MapCreatedEventHandler(object source, EventArgs args);
 
 		public event MapCreatedEventHandler Mapcreated;
-		
+
 		public Map(string name, string fileName, Worldtype worldtype = Worldtype.Normal)
 		{
 			this.name = name;
@@ -34,10 +34,10 @@ namespace RPGEngine
 		{
 			var inifile = new IniFile(this.filename);
 			this.mapHeight = ulong.Parse(inifile.WertLesen("Info", "Height"));
-			this.mapWidth =  ulong.Parse(inifile.WertLesen("Info", "Width"));
-			
+			this.mapWidth = ulong.Parse(inifile.WertLesen("Info", "Width"));
+
 			var num_layers = uint.Parse(inifile.WertLesen("Info", "Layers"));
-			var tilesetfile = Path.Combine("Data/Tileset/",	"{0}.png".F(inifile.WertLesen("Info", "Tileset")));
+			var tilesetfile = Path.Combine("Data/Tileset/", "{0}.png".F(inifile.WertLesen("Info", "Tileset")));
 
 			if (!File.Exists(tilesetfile))
 				Game.Print(LogType.Error, this.GetType().ToString(), "Tilesheet not found: {0}".F(tilesetfile));
@@ -96,7 +96,7 @@ namespace RPGEngine
 
 			var num_portals = uint.Parse(inifile.WertLesen("Info", "Portals"));
 			var portal_entry = string.Empty.Split(',');
-			var portal = new Portal(new Vector2<ulong>(0,0), string.Empty,
+			var portal = new Portal(new Vector2<ulong>(0, 0), string.Empty,
 				new Vector2<uint>((uint)tileSize.X, (uint)tileSize.Y));
 
 			var portal_values = string.Empty.Split(',');
@@ -133,7 +133,7 @@ namespace RPGEngine
 				image = inifile.WertLesen("Layer{0}".F(l), "Image").Split(',')[0];
 				tiles = new Dictionary<string, Tile>();
 
-/// TODO "Put this in a simple Function..."
+				/// TODO "Put this in a simple Function..."
 
 				#region "Fill the Map with Ground Tiles"
 				if (l == uint.MinValue)
@@ -149,7 +149,7 @@ namespace RPGEngine
 								tiletype = TileType.None;
 							else
 								if (tileentry.Length > 3)
-									tiletype = (TileType)int.Parse(tileentry[4]);
+								tiletype = (TileType)int.Parse(tileentry[4]);
 
 							imageoffset_a = tilegroups[image][rand.Next(0, tilegroups[image].Count - 1)];
 
@@ -160,7 +160,7 @@ namespace RPGEngine
 							targetY = y * (ulong)tileSize.X;
 
 							if (imagePos.X <= tileset.Width && imagePos.Y <= tileset.Height)
-								addTiles(ref tiles, ref Portals, ref targetX, ref targetY, ref tileset, 
+								addTiles(ref tiles, ref Portals, ref targetX, ref targetY, ref tileset,
 									ref layertype, ref tiletype, ref imagePos);
 						}
 				#endregion
@@ -200,10 +200,10 @@ namespace RPGEngine
 						tiletype = TileType.None;
 					else
 						if (tileentry.Length > 3)
-							tiletype = (TileType)int.Parse(tileentry[4]);
-					
+						tiletype = (TileType)int.Parse(tileentry[4]);
+
 					if (imagePos.X <= tileset.Width && imagePos.Y <= tileset.Height)
-						addTiles(ref tiles, ref Portals, ref targetX, ref targetY, ref tileset,ref layertype, ref tiletype, ref imagePos);	
+						addTiles(ref tiles, ref Portals, ref targetX, ref targetY, ref tileset, ref layertype, ref tiletype, ref imagePos);
 				}
 
 				if (tiles.Count > 0)
@@ -218,8 +218,8 @@ namespace RPGEngine
 			player.Position = this.camera;
 		}
 
-		private void addTiles(ref Dictionary<string, Tile> tiles, ref Dictionary<string, Portal> portals, 
-			ref ulong targetX, ref ulong targetY, ref Sprite tileset, ref LayerType layertype, ref TileType tiletype, 
+		private void addTiles(ref Dictionary<string, Tile> tiles, ref Dictionary<string, Portal> portals,
+			ref ulong targetX, ref ulong targetY, ref Sprite tileset, ref LayerType layertype, ref TileType tiletype,
 			ref Vector2<uint> srcImage)
 		{
 			var tile = new Tile(ref tileset, srcImage, new Vector2<uint>((uint)tileSize.X, (uint)tileSize.Y),
@@ -228,18 +228,15 @@ namespace RPGEngine
 			foreach (var p in this.Portals.Values)
 			{
 				if (p.Position.X == targetX && p.Position.Y == targetY)
-				{
 					tile.Portal = p;
-					break;
-				}
+			}
 
-				if (!tiles.ContainsKey("{0}-{1}-{2}".F(targetX, targetY, layertype)))
-					tiles.Add("{0}-{1}-{2}".F(targetX, targetY, layertype), tile);
-				else
-				{
-					tiles.Remove("{0}-{1}-{2}".F(targetX, targetY, layertype));
-					tiles.Add("{0}-{1}-{2}".F(targetX, targetY, layertype), tile);
-				}
+			if (!tiles.ContainsKey("{0}-{1}-{2}".F(targetX, targetY, layertype)))
+				tiles.Add("{0}-{1}-{2}".F(targetX, targetY, layertype), tile);
+			else
+			{
+				tiles.Remove("{0}-{1}-{2}".F(targetX, targetY, layertype));
+				tiles.Add("{0}-{1}-{2}".F(targetX, targetY, layertype), tile);
 			}
 		}
 
@@ -273,7 +270,7 @@ namespace RPGEngine
 		public void Events(ref SDL.SDL_Event e)
 		{
 			foreach (var layer in this.Layers.Values)
-					layer.Events(ref e);
+				layer.Events(ref e);
 		}
 
 		public void Close()
@@ -285,7 +282,7 @@ namespace RPGEngine
 
 				this.Layers.Clear();
 			}
-			
+
 			if (this.Portals != null)
 				this.Portals.Clear();
 		}

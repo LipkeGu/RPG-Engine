@@ -27,7 +27,7 @@ namespace RPGEngine
 			
 			if (this.Maps.Count > 0)
 			{
-				this.map = this.Maps["TestMap"];
+				this.map = this.Maps["Route1"];
 				this.map.Mapcreated += OnMapCreated;
 
 				this.map.Load(ref this.renderer, ref player);
